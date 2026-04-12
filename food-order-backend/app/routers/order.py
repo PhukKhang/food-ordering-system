@@ -81,6 +81,7 @@ def get_user_history(user_id: int, db: Session = Depends(deps.get_db)):
             mon = db.query(models.MonAn).get(item.maMon)
             if mon:
                 products.append({
+                    "maMon": item.maMon,
                     "tenMon": mon.tenMon,
                     "soLuong": item.soLuong,
                     "hinhAnh": mon.hinhAnh,

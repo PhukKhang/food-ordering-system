@@ -36,10 +36,11 @@ export function CartProvider({ children }) {
         const user = JSON.parse(userStr);
 
         try {
+            const addedQty = monAn.soLuong || 1;
             const resp = await fetch(`http://localhost:8000/cart/add?user_id=${user.userId}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ maMon: monAn.maMon, soLuong: 1 })
+                body: JSON.stringify({ maMon: monAn.maMon, soLuong: addedQty })
             });
 
             if (resp.ok) {
@@ -48,11 +49,11 @@ export function CartProvider({ children }) {
                     if (monDaCo) {
                         return ghHienTai.map(item =>
                             item.maMon === monAn.maMon
-                                ? { ...item, soLuong: item.soLuong + 1 }
+                                ? { ...item, soLuong: item.soLuong + addedQty }
                                 : item
                         );
                     } else {
-                        return [...ghHienTai, { ...monAn, soLuong: 1 }];
+                        return [...ghHienTai, { ...monAn, soLuong: addedQty }];
                     }
                 });
             }

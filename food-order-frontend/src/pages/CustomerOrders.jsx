@@ -1,12 +1,28 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useCart } from "../context/CartContext";
 
 export default function CustomerOrders() {
     const [orders, setOrders] = useState([]);
     const [activeTab, setActiveTab] = useState("current"); // "current", "history", "cancelled"
     const [loading, setLoading] = useState(false);
     const [confirmCancel, setConfirmCancel] = useState(null);
+    const [reordering, setReordering] = useState(false);
     const navigate = useNavigate();
+    const { addToCart } = useCart();
+
+    const handleReorder = async (danhSachMon) => {
+        setReordering(true);
+        await Promise.all(danhSachMon.map(mon => addToCart({
+            maMon: mon.maMon,
+            tenMon: mon.tenMon,
+            giaTien: mon.giaTien,
+            hinhAnh: mon.hinhAnh,
+            soLuong: mon.soLuong
+        })));
+        setReordering(false);
+        navigate("/cart");
+    };
 
     const fetchOrders = () => {
         const userStr = sessionStorage.getItem("user");
@@ -215,6 +231,20 @@ export default function CustomerOrders() {
                                                 onMouseOut={(e) => {e.target.style.backgroundColor = "#fff"; e.target.style.borderColor = "#ffcdd2"}}
                                             >
                                                 ❌ Hủy Đơn Này
+                                            </button>
+                                        </div>
+                                    )}
+                                    
+                                    {(order.trangThai === "completed" || order.trangThai === "cancelled") && (
+                                        <div style={{ marginTop: "15px" }}>
+                                            <button 
+                                                onClick={() => handleReorder(order.danhSachMon)}
+                                                disabled={reordering}
+                                                style={{ padding: "8px 20px", backgroundColor: reordering ? "#aaa" : "#4CAF50", color: "white", border: "none", borderRadius: "6px", cursor: reordering ? "not-allowed" : "pointer", fontWeight: "bold", transition: "0.2s", boxShadow: "0 2px 5px rgba(0,0,0,0.1)" }}
+                                                onMouseOver={(e) => { if(!reordering) e.target.style.backgroundColor = "#388E3C" }}
+                                                onMouseOut={(e) => { if(!reordering) e.target.style.backgroundColor = "#4CAF50" }}
+                                            >
+                                                {reordering ? "⏳ Đang nạp giỏ..." : "🛒 Mua Lại Đơn Này"}
                                             </button>
                                         </div>
                                     )}
