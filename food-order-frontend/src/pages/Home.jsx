@@ -1,46 +1,46 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCart } from "../context/CartContext";
 import { useNavigate } from "react-router-dom";
 
-// 1. Dữ liệu giả lập khớp với cấu trúc bảng MonAn trong Database
-const dummyFoods = [
-    {
-        maMon: 1,
-        tenMon: "Gà Rán Giòn Cay",
-        giaTien: 45000,
-        hinhAnh: "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=400&q=80",
-        moTa: "Gà rán chuẩn vị, giòn rụm bên ngoài, mọng nước bên trong.",
-        trangThai: "available"
-    },
-    {
-        maMon: 2,
-        tenMon: "Burger Bò Úc Phô Mai",
-        giaTien: 65000,
-        hinhAnh: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=400&q=80",
-        moTa: "Thịt bò nướng lửa hồng kết hợp cùng phô mai Cheddar chảy.",
-        trangThai: "available"
-    },
-    {
-        maMon: 3,
-        tenMon: "Pizza Hải Sản (Size L)",
-        giaTien: 159000,
-        hinhAnh: "https://images.unsplash.com/photo-1513104890d38-7c0f4fff45f1?auto=format&fit=crop&w=400&q=80",
-        moTa: "Pizza đế mỏng nướng củi, ngập tràn tôm, mực và phô mai Mozzarella.",
-        trangThai: "out_of_stock" // Món này đang hết hàng để test logic
-    },
-    {
-        maMon: 4,
-        tenMon: "Trà Đào Cam Sả",
-        giaTien: 35000,
-        hinhAnh: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=400&q=80",
-        moTa: "Giải nhiệt mùa hè cực đã với những miếng đào giòn sần sật.",
-        trangThai: "available"
-    }
-];
-
 export default function Home() {
+    const [foods, setFoods] = useState([]);
+    const [categories, setCategories] = useState([]);
+    
+    // TÍNH NĂNG TÌM KIẾM & LỌC
+    const [searchTerm, setSearchTerm] = useState("");
+    const [priceRange, setPriceRange] = useState("ALL"); // Giá trị: ALL, UNDER_50K, 50K_100K, OVER_100K
+    const [selectedCategory, setSelectedCategory] = useState(null); // null = Tất cả
+
+    useEffect(() => {
+        fetch("http://localhost:8000/products/")
+            .then(res => res.json())
+            .then(data => setFoods(data))
+            .catch(err => console.error("Lỗi khi tải dữ liệu:", err));
+
+        fetch("http://localhost:8000/categories/")
+            .then(res => res.json())
+            .then(data => setCategories(Array.isArray(data) ? data : []))
+            .catch(err => console.error("Lỗi khi tải danh mục:", err));
+    }, []);
     const { addToCart } = useCart();
     const navigate = useNavigate();
+
+    // Logic Lọc (Chạy mỗi khi searchTerm, priceRange hoặc selectedCategory thay đổi)
+    const filteredFoods = foods.filter((food) => {
+        // 1. Phù hợp Tên món
+        const matchName = food.tenMon.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        // 2. Phù hợp Khoảng giá
+        let matchPrice = true;
+        if (priceRange === "UNDER_50K") matchPrice = food.giaTien < 50000;
+        else if (priceRange === "50K_100K") matchPrice = (food.giaTien >= 50000 && food.giaTien <= 100000);
+        else if (priceRange === "OVER_100K") matchPrice = food.giaTien > 100000;
+
+        // 3. Phù hợp Danh mục
+        const matchCategory = selectedCategory === null || food.maDanhMuc === selectedCategory;
+
+        return matchName && matchPrice && matchCategory;
+    });
     
     // Tạo state lưu trữ thông báo
     const [notification, setNotification] = useState(null);
@@ -56,7 +56,7 @@ export default function Home() {
 
     const handleAddToCart = (monAn) => {
         // Kiểm tra xem đã đăng nhập chưa
-        const user = localStorage.getItem("user");
+        const user = sessionStorage.getItem("user");
         if (!user) {
             showNotification("Vui lòng đăng nhập trước khi mua hàng!", "error");
             // Đợi 1.5 giây cho thông báo biến mất tự nhiên rồi mới chuyển trang
@@ -64,7 +64,7 @@ export default function Home() {
             return;
         }
 
-        if (monAn.trangThai === "out_of_stock") {
+        if (monAn.conHang === false) {
             showNotification(`Rất tiếc! Món ${monAn.tenMon} hiện tại đã hết hàng.`, "error");
             return;
         }
@@ -110,18 +110,114 @@ export default function Home() {
                     {notification.message}
                 </div>
             )}
-            <h1 style={{ textAlign: "center", color: "#FF5722", marginBottom: "40px" }}>Menu Của Nhà Hàng</h1>
+            <h1 style={{ textAlign: "center", color: "#FF5722", marginBottom: "30px", fontSize: "32px", fontWeight: "900" }}>KHÁM PHÁ THỰC ĐƠN</h1>
 
-            {/* Khung chứa dạng Lưới (Grid) để xếp các món ăn cạnh nhau */}
-            <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-                gap: "25px"
-            }}>
+            {/* THANH TÌM KIẾM & BỘ LỌC */}
+            <div style={{ backgroundColor: "#fff", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", marginBottom: "20px", display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "center", justifyContent: "space-between", border: "1px solid #f0f0f0" }}>
+                
+                {/* Search Bar */}
+                <div style={{ flex: "1 1 300px", position: "relative" }}>
+                    <input 
+                        type="text" 
+                        placeholder="🔍 Bạn đang thèm món gì? Gõ vào đây..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        style={{ width: "100%", padding: "14px 15px", paddingLeft: "45px", borderRadius: "30px", border: "1px solid #ddd", fontSize: "16px", outline: "none", boxSizing: "border-box", boxShadow: "inset 0 2px 4px rgba(0,0,0,0.02)" }}
+                        onFocus={(e) => e.target.style.borderColor = "#FF5722"}
+                        onBlur={(e) => e.target.style.borderColor = "#ddd"}
+                    />
+                </div>
 
-                {/* 3. Dùng vòng lặp .map() để in từng món ăn ra màn hình */}
-                {dummyFoods.map((food) => (
-                    <div key={food.maMon} style={{
+                {/* Price Filter Chips */}
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", padding: "5px 0" }}>
+                    <span style={{ fontWeight: "bold", color: "#555", alignSelf: "center", marginRight: "10px" }}>Lọc giá:</span>
+                    
+                    <button onClick={() => setPriceRange("ALL")} style={{ padding: "8px 18px", borderRadius: "20px", border: "1px solid #FF5722", background: priceRange === "ALL" ? "#FF5722" : "transparent", color: priceRange === "ALL" ? "white" : "#FF5722", cursor: "pointer", fontWeight: "bold", transition: "all 0.2s" }} onMouseOver={(e) => e.target.style.transform = "translateY(-2px)"} onMouseOut={(e) => e.target.style.transform = "translateY(0)"}>
+                        Tất cả
+                    </button>
+                    <button onClick={() => setPriceRange("UNDER_50K")} style={{ padding: "8px 18px", borderRadius: "20px", border: "1px solid #FF5722", background: priceRange === "UNDER_50K" ? "#FF5722" : "transparent", color: priceRange === "UNDER_50K" ? "white" : "#FF5722", cursor: "pointer", fontWeight: "bold", transition: "all 0.2s" }} onMouseOver={(e) => e.target.style.transform = "translateY(-2px)"} onMouseOut={(e) => e.target.style.transform = "translateY(0)"}>
+                        Dưới 50K
+                    </button>
+                    <button onClick={() => setPriceRange("50K_100K")} style={{ padding: "8px 18px", borderRadius: "20px", border: "1px solid #FF5722", background: priceRange === "50K_100K" ? "#FF5722" : "transparent", color: priceRange === "50K_100K" ? "white" : "#FF5722", cursor: "pointer", fontWeight: "bold", transition: "all 0.2s" }} onMouseOver={(e) => e.target.style.transform = "translateY(-2px)"} onMouseOut={(e) => e.target.style.transform = "translateY(0)"}>
+                        50K - 100K
+                    </button>
+                    <button onClick={() => setPriceRange("OVER_100K")} style={{ padding: "8px 18px", borderRadius: "20px", border: "1px solid #FF5722", background: priceRange === "OVER_100K" ? "#FF5722" : "transparent", color: priceRange === "OVER_100K" ? "white" : "#FF5722", cursor: "pointer", fontWeight: "bold", transition: "all 0.2s" }} onMouseOver={(e) => e.target.style.transform = "translateY(-2px)"} onMouseOut={(e) => e.target.style.transform = "translateY(0)"}>
+                        Trên 100K
+                    </button>
+                </div>
+            </div>
+
+            {/* LỌC THEO DANH MỤC */}
+            {categories.length > 0 && (
+                <div style={{ backgroundColor: "#fff", padding: "16px 20px", borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", marginBottom: "30px", border: "1px solid #f0f0f0", display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "center" }}>
+                    <span style={{ fontWeight: "bold", color: "#555", marginRight: "6px", whiteSpace: "nowrap" }}>🏷️ Danh mục:</span>
+
+                    {/* Chip "Tất cả" */}
+                    <button
+                        onClick={() => setSelectedCategory(null)}
+                        style={{
+                            padding: "7px 18px",
+                            borderRadius: "20px",
+                            border: selectedCategory === null ? "none" : "1px solid #ddd",
+                            background: selectedCategory === null ? "#FF5722" : "#f5f5f5",
+                            color: selectedCategory === null ? "white" : "#555",
+                            cursor: "pointer",
+                            fontWeight: "bold",
+                            fontSize: "14px",
+                            transition: "all 0.2s",
+                            boxShadow: selectedCategory === null ? "0 3px 10px rgba(255,87,34,0.3)" : "none"
+                        }}
+                    >
+                        Tất cả
+                    </button>
+
+                    {/* Chip từng danh mục */}
+                    {categories.map((cat) => (
+                        <button
+                            key={cat.maDanhMuc}
+                            onClick={() => setSelectedCategory(
+                                selectedCategory === cat.maDanhMuc ? null : cat.maDanhMuc
+                            )}
+                            style={{
+                                padding: "7px 18px",
+                                borderRadius: "20px",
+                                border: selectedCategory === cat.maDanhMuc ? "none" : "1px solid #ddd",
+                                background: selectedCategory === cat.maDanhMuc ? "#FF5722" : "#f5f5f5",
+                                color: selectedCategory === cat.maDanhMuc ? "white" : "#555",
+                                cursor: "pointer",
+                                fontWeight: "bold",
+                                fontSize: "14px",
+                                transition: "all 0.2s",
+                                boxShadow: selectedCategory === cat.maDanhMuc ? "0 3px 10px rgba(255,87,34,0.3)" : "none"
+                            }}
+                        >
+                            {cat.tenDanhMuc}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {/* Check nếu kết quả rỗng */}
+            {filteredFoods.length === 0 && foods.length > 0 ? (
+                <div style={{ textAlign: "center", padding: "60px 20px", background: "#fff", borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)" }}>
+                    <p style={{ fontSize: "60px", margin: "0 0 15px 0" }}>🕵️‍♂️</p>
+                    <h3 style={{ color: "#444", fontSize: "22px", margin: "0 0 10px 0" }}>Không có món nào lọt vào tấm ngắm của bạn!</h3>
+                    <p style={{ color: "#777", fontSize: "16px" }}>Hãy thử nhập từ khóa ngắn hơn hoặc chọn lại khoảng Giá nhé.</p>
+                    <button onClick={() => {setSearchTerm(""); setPriceRange("ALL"); setSelectedCategory(null);}} style={{ marginTop: "25px", padding: "12px 25px", background: "#FF5722", color: "white", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", fontSize: "16px", transition: "0.2s" }}>
+                        Xoá trắng Bộ Lọc
+                    </button>
+                </div>
+            ) : (
+                <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+                    gap: "30px"
+                }}>
+
+                    {/* Vòng lặp map trên mảng ĐÃ ĐƯỢC LỌC */}
+                    {filteredFoods.map((food) => (
+                        <div key={food.maMon} style={{
+
                         border: "1px solid #e0e0e0",
                         borderRadius: "12px",
                         overflow: "hidden",
@@ -154,22 +250,23 @@ export default function Home() {
                                     // Đổi màu nút thành xám nếu hết hàng
                                     style={{
                                         padding: "8px 15px",
-                                        backgroundColor: food.trangThai === "out_of_stock" ? "#9E9E9E" : "#4CAF50",
+                                        backgroundColor: food.conHang === false ? "#9E9E9E" : "#4CAF50",
                                         color: "white",
                                         border: "none",
                                         borderRadius: "6px",
                                         fontWeight: "bold",
-                                        cursor: food.trangThai === "out_of_stock" ? "not-allowed" : "pointer"
+                                        cursor: food.conHang === false ? "not-allowed" : "pointer"
                                     }}
                                 >
-                                    {food.trangThai === "out_of_stock" ? "Hết hàng" : "Mua ngay"}
+                                    {food.conHang === false ? "Hết hàng" : "Mua ngay"}
                                 </button>
                             </div>
                         </div>
                     </div>
                 ))}
 
-            </div>
+                </div>
+            )}
         </div>
     );
 }

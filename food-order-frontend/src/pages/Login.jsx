@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useCart } from "../context/CartContext";
 
 export default function Login() {
     // Tạo "kho lưu trữ" nhỏ (state) để nhớ tên đăng nhập và mật khẩu
@@ -8,16 +9,42 @@ export default function Login() {
 
     // Công cụ dùng để chuyển trang sau khi đăng nhập thành công
     const navigate = useNavigate();
+    const { fetchCart } = useCart(); // Lấy hàm đồng bộ giỏ hàng
 
     // Hàm này sẽ chạy khi người dùng bấm nút "Đăng nhập"
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
 
-        // Lưu thông tin đăng nhập ảo vào trình duyệt
-        localStorage.setItem("user", JSON.stringify({ username }));
+        try {
+            const response = await fetch("http://localhost:8000/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await response.json();
 
-        // Giả lập: Nếu đăng nhập thành công thì tự động đá về Trang Chủ
-        navigate("/"); 
+            if (data.error) {
+                alert("Tên đăng nhập hoặc mật khẩu không đúng!");
+            } else {
+                // Lưu thông tin đăng nhập thật vào trình duyệt
+                sessionStorage.setItem("user", JSON.stringify({ 
+                    token: data.access_token,
+                    userId: data.userId,
+                    username: data.username,
+                    hoTen: data.hoTen,
+                    role: data.role
+                }));
+                
+                // Đồng bộ Giỏ hàng tức thời
+                await fetchCart();
+
+                // Tự động đá về Trang Chủ sau khi đăng nhập thành công
+                navigate("/"); 
+            }
+        } catch (error) {
+            console.error("Lỗi đăng nhập:", error);
+            alert("Lỗi kết nối máy chủ");
+        }
     };
 
     return (
@@ -57,6 +84,10 @@ export default function Login() {
                     Đăng nhập
                 </button>
             </form>
+
+            <p style={{ textAlign: "center", marginTop: "20px", fontSize: "15px", color: "#666" }}>
+                Chưa có tài khoản? <Link to="/register" style={{ color: "#FF5722", fontWeight: "bold", textDecoration: "none" }}>Đăng ký ngay</Link>
+            </p>
         </div>
     );
 }

@@ -1,10 +1,12 @@
 import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Checkout from "./pages/Checkout";
 import OrderSuccess from "./pages/OrderSuccess";
 import Cart from "./pages/Cart";
+import CustomerOrders from "./pages/CustomerOrders";
 import { CartProvider, useCart } from "./context/CartContext";
 
 // Component Navbar tách riêng để có thể xài được useCart
@@ -14,11 +16,11 @@ function Navbar() {
   const location = useLocation(); // Giúp Navbar tự render lại khi đổi route
   
   // Lấy thông tin user từ Local Storage
-  const userStr = localStorage.getItem("user");
+  const userStr = sessionStorage.getItem("user");
   const user = userStr ? JSON.parse(userStr) : null;
 
   const handleLogout = () => {
-      localStorage.removeItem("user");
+      sessionStorage.removeItem("user");
       navigate("/"); // Điều hướng về trang chủ
   };
 
@@ -40,7 +42,14 @@ function Navbar() {
         ) : (
             <Link to="/login" style={{ color: "white", marginRight: "20px", textDecoration: "none" }}>Đăng Nhập</Link>
         )}
-        <Link to="/admin" style={{ color: "white", marginRight: "20px", textDecoration: "none" }}>Quản Lý</Link>
+        
+        {(user && user.role === "admin") && (
+            <Link to="/admin" style={{ color: "white", marginRight: "20px", textDecoration: "none", fontWeight: "bold" }}>Quản Lý</Link>
+        )}
+
+        {(user && user.role === "customer") && (
+            <Link to="/history" style={{ color: "white", marginRight: "20px", textDecoration: "none", fontWeight: "bold" }}>📦 Đơn Hàng</Link>
+        )}
 
         {/* Nút Giỏ Hàng có số lượng */}
         <Link to="/cart" style={{ color: "white", textDecoration: "none", position: "relative" }}>
@@ -69,8 +78,10 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route path="/admin" element={<Dashboard />} />
             <Route path="/cart" element={<Cart />} />
+            <Route path="/history" element={<CustomerOrders />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/success" element={<OrderSuccess />} />
           </Routes>

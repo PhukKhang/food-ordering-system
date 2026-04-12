@@ -1,13 +1,6 @@
-import { useState } from "react";
-
-// Dữ liệu giả lập cho Đơn Hàng (Mock Data)
-const mockOrders = [
-    { id: "FO412931", khachHang: "Nguyễn Văn A", sdt: "0901234567", tongTien: 125000, trangThai: "pending", thoiGian: "12:00 24/10" },
-    { id: "FO134912", khachHang: "Trần Thị B", sdt: "0912345678", tongTien: 85000, trangThai: "pending", thoiGian: "12:05 24/10" },
-    { id: "FO982312", khachHang: "Lê Văn C", sdt: "0923456789", tongTien: 315000, trangThai: "confirmed", thoiGian: "11:30 24/10" },
-    { id: "FO102391", khachHang: "Phạm D", sdt: "0934567890", tongTien: 45000, trangThai: "delivering", thoiGian: "10:45 24/10" },
-    { id: "FO882103", khachHang: "Hoàng E", sdt: "0945678901", tongTien: 590000, trangThai: "completed", thoiGian: "09:00 24/10" }
-];
+import { useState, useEffect } from "react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import * as XLSX from 'xlsx';
 
 // Cấu hình linh tinh để tái sử dụng hiển thị & Màu sắc
 const STATUS_CONFIG = {
@@ -15,43 +8,348 @@ const STATUS_CONFIG = {
     confirmed: { label: "Đã xác nhận", color: "#CCE5FF", textColor: "#004085", next: "preparing", prev: "pending", actionText: "Bắt đầu nấu", actionColor: "#9C27B0" },
     preparing: { label: "Đang chuẩn bị", color: "#E2D9F3", textColor: "#38186D", next: "delivering", prev: "confirmed", actionText: "Giao hàng", actionColor: "#FF9800" },
     delivering: { label: "Đang giao hàng", color: "#FFF3CD", textColor: "#FF9800", next: "completed", prev: "preparing", actionText: "Khách đã nhận", actionColor: "#4CAF50" },
-    completed: { label: "Hoàn tất", color: "#D4EDDA", textColor: "#155724", next: null, prev: "delivering", actionText: "Đã xong", actionColor: "#ccc" }
+    completed: { label: "Hoàn tất", color: "#D4EDDA", textColor: "#155724", next: null, prev: "delivering", actionText: "Đã xong", actionColor: "#ccc" },
+    cancelled: { label: "Đã Bị Hủy", color: "#FFEBEE", textColor: "#C62828", next: null, prev: null, actionText: "Đã Hủy", actionColor: "#ccc" }
+};
+
+// Helper lấy JWT token từ sessionStorage
+const getToken = () => {
+    const userStr = sessionStorage.getItem("user");
+    if (!userStr) return null;
+    return JSON.parse(userStr).token || null;
 };
 
 export default function Dashboard() {
-    const [orders, setOrders] = useState(mockOrders);
+    const [activeTab, setActiveTab] = useState("orders"); // 'orders' hoặc 'products'
+    const [orders, setOrders] = useState([]);
+    const [products, setProducts] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [showDeleted, setShowDeleted] = useState(false);
+    
+    // UI States cho thông báo và xác nhận
+    const [notification, setNotification] = useState(null);
+    const [confirmDelete, setConfirmDelete] = useState(null);
+    const [editProduct, setEditProduct] = useState(null); // null = đóng modal, có data = đang sửa
+    const [isEditUploading, setIsEditUploading] = useState(false);
 
-    // Xử lý Logic chuyển Trạng thái về phía trước (Duyệt tiến)
+    const showNotification = (message, type = "success") => {
+        setNotification({ message, type });
+        setTimeout(() => setNotification(null), 3000);
+    };
+    // State form cho Món ăn mới
+    const [newProduct, setNewProduct] = useState({
+        tenMon: "",
+        giaTien: "",
+        hinhAnh: "",
+        moTa: ""
+    });
+
+    // -------- LOGIC QUẢN LÝ MÓN ĂN --------
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            setIsUploading(true);
+            const token = getToken();
+            const response = await fetch("http://localhost:8000/products/upload-image", {
+                method: "POST",
+                headers: token ? { "Authorization": `Bearer ${token}` } : {},
+                body: formData
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setNewProduct({ ...newProduct, hinhAnh: data.url });
+            } else {
+                showNotification("Lỗi upload: " + data.detail, "error");
+            }
+        } catch (error) {
+            console.error("Lỗi khi upload ảnh:", error);
+            showNotification("Lỗi kết nối khi upload ảnh!", "error");
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const fetchProducts = async () => {
+        try {
+            setIsLoading(true);
+            const endpoint = showDeleted ? "http://localhost:8000/products/all" : "http://localhost:8000/products/";
+            const response = await fetch(endpoint);
+            const data = await response.json();
+            if (showDeleted) {
+                setProducts(data.filter(p => p.daXoa === true));
+            } else {
+                setProducts(data);
+            }
+        } catch (error) {
+            console.error("Lỗi khi tải món ăn:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const fetchOrders = async () => {
+        try {
+            const token = getToken();
+            const response = await fetch("http://localhost:8000/orders/", {
+                headers: token ? { "Authorization": `Bearer ${token}` } : {}
+            });
+            const data = await response.json();
+            if (Array.isArray(data)) setOrders(data);
+        } catch (error) {
+            console.error("Lỗi khi tải đơn hàng:", error);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === "products") {
+            fetchProducts();
+        } else if (activeTab === "orders") {
+            fetchOrders();
+        }
+    }, [activeTab, showDeleted]);
+
+    const handleAddProduct = async (e) => {
+        e.preventDefault();
+        try {
+            const formData = {
+                ...newProduct,
+                giaTien: parseFloat(newProduct.giaTien)
+            };
+            const token = getToken();
+            const response = await fetch("http://localhost:8000/products/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { "Authorization": `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify(formData)
+            });
+            if (response.ok) {
+                showNotification("Đã thêm món mới thành công!", "success");
+                setNewProduct({ tenMon: "", giaTien: "", hinhAnh: "", moTa: "" }); // Reset form
+                fetchProducts(); // Refresh danh sách
+            }
+        } catch (error) {
+            showNotification("Có lỗi xảy ra khi gọi API thêm món!", "error");
+            console.error(error);
+        }
+    };
+
+    const confirmActionDelete = (maMon) => {
+        setConfirmDelete(maMon);
+    };
+
+    const executeDelete = async () => {
+        if (!confirmDelete) return;
+        try {
+            const token = getToken();
+            const response = await fetch(`http://localhost:8000/products/${confirmDelete}`, {
+                method: "DELETE",
+                headers: token ? { "Authorization": `Bearer ${token}` } : {}
+            });
+            if (response.ok) {
+                showNotification("Đã xóa món ăn thành công!", "success");
+                fetchProducts();
+            } else {
+                showNotification("Không thể xóa. Có thể món này đang dính với 1 Giỏ hàng hoặc Đơn hàng nào đó trong DB!", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            showNotification("Lỗi khi xóa món!", "error");
+        } finally {
+            setConfirmDelete(null);
+        }
+    };
+
+    const handleRestoreProduct = async (maMon) => {
+        try {
+            const token = getToken();
+            const response = await fetch(`http://localhost:8000/products/${maMon}/restore`, {
+                method: "PUT",
+                headers: token ? { "Authorization": `Bearer ${token}` } : {}
+            });
+            if (response.ok) {
+                showNotification("Phục hồi món ăn từ Thùng rác thành công!", "success");
+                fetchProducts();
+            } else {
+                showNotification("Lỗi khi khôi phục món!", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            showNotification("Lỗi kết nối khi khôi phục!", "error");
+        }
+    };
+
+    const handleToggleProductStatus = async (maMon) => {
+        try {
+            const token = getToken();
+            const response = await fetch(`http://localhost:8000/products/${maMon}/toggle-status`, {
+                method: "PUT",
+                headers: token ? { "Authorization": `Bearer ${token}` } : {}
+            });
+            if (response.ok) {
+                fetchProducts();
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    // -------- LOGIC CHỈNH SỬA MÓN ĂN --------
+    const openEditModal = (food) => {
+        setEditProduct({ ...food }); // Clone object để tránh mutate trực tiếp
+    };
+
+    const handleEditImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append("file", file);
+        try {
+            setIsEditUploading(true);
+            const token = getToken();
+            const response = await fetch("http://localhost:8000/products/upload-image", {
+                method: "POST",
+                headers: token ? { "Authorization": `Bearer ${token}` } : {},
+                body: formData
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setEditProduct(prev => ({ ...prev, hinhAnh: data.url }));
+            }
+        } catch (err) {
+            showNotification("Lỗi upload ảnh!", "error");
+        } finally {
+            setIsEditUploading(false);
+        }
+    };
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        if (!editProduct) return;
+        try {
+            const token = getToken();
+            const response = await fetch(`http://localhost:8000/products/${editProduct.maMon}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { "Authorization": `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({
+                    tenMon: editProduct.tenMon,
+                    giaTien: parseFloat(editProduct.giaTien),
+                    hinhAnh: editProduct.hinhAnh,
+                    moTa: editProduct.moTa
+                })
+            });
+            if (response.ok) {
+                showNotification(`Đã cập nhật "${editProduct.tenMon}" thành công!`, "success");
+                setEditProduct(null);
+                fetchProducts();
+            } else {
+                showNotification("Lỗi khi cập nhật món ăn!", "error");
+            }
+        } catch (err) {
+            console.error(err);
+            showNotification("Lỗi kết nối!", "error");
+        }
+    };
+
+
+    // -------- LOGIC ĐƠN HÀNG --------
+    const handleToggleOrderStatus = async (orderId, newStatus) => {
+        try {
+            const token = getToken();
+            const response = await fetch(`http://localhost:8000/orders/${orderId}/status`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { "Authorization": `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({ trangThai: newStatus })
+            });
+            if (response.ok) {
+                showNotification("Cập nhật trạng thái đơn hàng thành công!", "success");
+                fetchOrders();
+            } else {
+                showNotification("Lỗi cập nhật trạng thái đơn hàng!", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            showNotification("Lỗi kết nối khi cập nhật đơn hàng!", "error");
+        }
+    };
+
     const handleNextStatus = (orderId, currentStatus) => {
         const nextStatus = STATUS_CONFIG[currentStatus].next;
-        if (!nextStatus) return; // Nếu đã completed thì thôi không làm gì cả
-        
-        setOrders(orders.map(order => 
-            order.id === orderId ? { ...order, trangThai: nextStatus } : order
-        ));
+        if (!nextStatus) return; 
+        handleToggleOrderStatus(orderId, nextStatus);
     };
 
-    // Xử lý lùi Trạng thái (Hoàn tác nếu lỡ bấm nhầm)
     const handlePrevStatus = (orderId, currentStatus) => {
         const prevStatus = STATUS_CONFIG[currentStatus].prev;
-        if (!prevStatus) return; // Nếu đang pending thì không thể lùi được nữa
-        
-        setOrders(orders.map(order => 
-            order.id === orderId ? { ...order, trangThai: prevStatus } : order
-        ));
+        if (!prevStatus) return; 
+        handleToggleOrderStatus(orderId, prevStatus);
     };
 
-    // Calculate metrics cho thẻ Thống kê
+
+    // -------- THỐNG KÊ --------
     const totalRevenue = orders.filter(o => o.trangThai === "completed").reduce((sum, o) => sum + o.tongTien, 0);
     const pendingCount = orders.filter(o => o.trangThai === "pending").length;
     const deliveringCount = orders.filter(o => o.trangThai === "delivering").length;
 
-    return (
-        <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "20px", fontFamily: "sans-serif" }}>
-            <h1 style={{ color: "#333", marginBottom: "30px", borderLeft: "5px solid #FF5722", paddingLeft: "15px" }}>
-                Bảng Điều Khiển Quản Trị
-            </h1>
-            
+    // -------- BIỂU ĐỒ & EXPORT --------
+    const chartDataMap = {};
+    orders.filter(o => o.trangThai === "completed").forEach(o => {
+        // o.thoiGian có dạng "YYYY-MM-DD HH:MM..." 
+        const dateStr = o.thoiGian ? o.thoiGian.split(' ')[0] : 'Unknown';
+        const parts = dateStr.split('-');
+        const shortDate = parts.length === 3 ? `${parts[2]}/${parts[1]}` : dateStr;
+
+        if (!chartDataMap[shortDate]) {
+            chartDataMap[shortDate] = 0;
+        }
+        chartDataMap[shortDate] += o.tongTien;
+    });
+
+    const chartData = Object.keys(chartDataMap).map(key => ({
+        date: key,
+        revenue: chartDataMap[key]
+    })).sort((a, b) => a.date.localeCompare(b.date));
+
+    const handleExportExcel = () => {
+        const completedOrders = orders.filter(o => o.trangThai === "completed");
+        if (completedOrders.length === 0) {
+            showNotification("Không có dữ liệu đơn hàng hoàn tất để xuất!", "error");
+            return;
+        }
+
+        const excelData = completedOrders.map(o => ({
+            "Mã Đơn": o.id,
+            "Khách Hàng": o.khachHang,
+            "Số Điện Thoại": o.sdt,
+            "Thời Gian Đặt": o.thoiGian,
+            "Tổng Tiền (VNĐ)": o.tongTien
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(excelData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Doanh Thu");
+
+        XLSX.writeFile(workbook, "BaoCao_DoanhThu_FoodOrder.xlsx");
+        showNotification("Xuất báo cáo Excel thành công!", "success");
+    };
+
+
+    // RENDER: GIAO DIỆN TAB ĐƠN HÀNG
+    const renderOrderTab = () => (
+        <>
             {/* VÙNG THỐNG KÊ (CARDS) */}
             <div style={{ display: "flex", gap: "20px", marginBottom: "40px" }}>
                 <div style={{ flex: 1, backgroundColor: "#fff", padding: "25px", borderRadius: "10px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", borderTop: "5px solid #FFC107" }}>
@@ -76,11 +374,50 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* VÙNG BẢNG ĐƠN HÀNG (DATA TABLE) */}
+            {/* VÙNG BIỂU ĐỒ DOANH THU */}
+            <div style={{ backgroundColor: "#fff", padding: "20px 25px", borderRadius: "10px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", marginBottom: "40px" }}>
+                <h3 style={{ margin: "0 0 20px 0", color: "#333", fontSize: "18px", borderLeft: "4px solid #4CAF50", paddingLeft: "10px" }}>
+                    📈 Biểu đồ Doanh Thu theo Ngày
+                </h3>
+                {chartData.length > 0 ? (
+                    <div style={{ width: '100%', height: 300 }}>
+                        <ResponsiveContainer>
+                            <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="date" />
+                                <YAxis tickFormatter={(val) => (val / 1000) + 'k'} />
+                                <Tooltip formatter={(value) => value.toLocaleString('vi-VN') + ' đ'} />
+                                <Bar dataKey="revenue" fill="#4CAF50" radius={[4, 4, 0, 0]} name="Doanh Thu" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px', backgroundColor: '#f9f9f9', borderRadius: '8px', color: '#888' }}>
+                        Chưa có dữ liệu giao dịch hoàn tất để vẽ biểu đồ
+                    </div>
+                )}
+            </div>
+
+            {/* VÙNG BẢNG ĐƠN HÀNG */}
             <div style={{ backgroundColor: "#fff", borderRadius: "10px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", overflow: "hidden" }}>
                 <div style={{ padding: "20px 25px", borderBottom: "1px solid #eee", backgroundColor: "#fafafa", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <h2 style={{ margin: 0, fontSize: "20px", color: "#333" }}>Danh Sách Đơn Hàng Mới Nhất</h2>
-                    <span style={{ fontSize: "14px", color: "#888" }}>Cập nhật tự động (Local)</span>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <button 
+                            onClick={handleExportExcel}
+                            style={{ padding: "8px 15px", backgroundColor: "#1976D2", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", display: "flex", alignItems: "center", gap: "6px", boxShadow: "0 2px 5px rgba(0,0,0,0.1)", transition: "0.2s" }}
+                            className="btn-hover"
+                        >
+                            📥 Xuất Báo Cáo
+                        </button>
+                        <button 
+                            onClick={fetchOrders}
+                            style={{ padding: "8px 15px", backgroundColor: "#4CAF50", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", display: "flex", alignItems: "center", gap: "6px", boxShadow: "0 2px 5px rgba(0,0,0,0.1)", transition: "0.2s" }}
+                            className="btn-hover"
+                        >
+                            🔄 Làm mới
+                        </button>
+                    </div>
                 </div>
                 
                 <div style={{ overflowX: "auto" }}>
@@ -109,62 +446,23 @@ export default function Dashboard() {
                                         <td style={{ padding: "18px 20px", color: "#666", fontSize: "15px" }}>{order.thoiGian}</td>
                                         <td style={{ padding: "18px 20px", fontWeight: "bold", color: "#333", fontSize: "16px" }}>{order.tongTien.toLocaleString('vi-VN')} đ</td>
                                         <td style={{ padding: "18px 20px" }}>
-                                            {/* Thẻ Label Trạng thái (Badge) */}
                                             <span style={{ 
-                                                display: "inline-block",
-                                                padding: "6px 14px", 
-                                                backgroundColor: statusInfo.color, 
-                                                color: statusInfo.textColor,
-                                                borderRadius: "20px",
-                                                fontSize: "13px",
-                                                fontWeight: "bold",
-                                                boxShadow: "0 2px 5px rgba(0,0,0,0.05)"
+                                                display: "inline-block", padding: "6px 14px", 
+                                                backgroundColor: statusInfo.color, color: statusInfo.textColor,
+                                                borderRadius: "20px", fontSize: "13px", fontWeight: "bold", boxShadow: "0 2px 5px rgba(0,0,0,0.05)"
                                             }}>
                                                 {statusInfo.label}
                                             </span>
                                         </td>
                                         <td style={{ padding: "18px 25px", textAlign: "right" }}>
                                             <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-                                                {/* Nút lùi trạng thái (Hoàn tác) */}
                                                 {statusInfo.prev && (
-                                                    <button 
-                                                        onClick={() => handlePrevStatus(order.id, order.trangThai)}
-                                                        title="Hoàn tác thao tác"
-                                                        style={{
-                                                            padding: "10px",
-                                                            backgroundColor: "#fff",
-                                                            color: "#555",
-                                                            border: "1px solid #ccc",
-                                                            borderRadius: "6px",
-                                                            cursor: "pointer",
-                                                            fontWeight: "bold",
-                                                            fontSize: "14px",
-                                                            transition: "0.2s",
-                                                            boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
-                                                        }}
-                                                    >
+                                                    <button onClick={() => handlePrevStatus(order.id, order.trangThai)} title="Hoàn tác" style={{ padding: "10px", backgroundColor: "#fff", color: "#555", border: "1px solid #ccc", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", transition: "0.2s", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>
                                                         ⟲
                                                     </button>
                                                 )}
-
-                                                {/* Nút bấm Hành động chuyển trạng thái */}
                                                 {statusInfo.next ? (
-                                                    <button 
-                                                        onClick={() => handleNextStatus(order.id, order.trangThai)}
-                                                        style={{
-                                                            padding: "10px 18px",
-                                                            backgroundColor: statusInfo.actionColor,
-                                                            color: "white",
-                                                            border: "none",
-                                                            borderRadius: "6px",
-                                                            cursor: "pointer",
-                                                            fontWeight: "bold",
-                                                            fontSize: "14px",
-                                                            transition: "0.2s",
-                                                            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                                                            minWidth: "120px"
-                                                        }}
-                                                    >
+                                                    <button onClick={() => handleNextStatus(order.id, order.trangThai)} style={{ padding: "10px 18px", backgroundColor: statusInfo.actionColor, color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", transition: "0.2s", boxShadow: "0 2px 8px rgba(0,0,0,0.15)", minWidth: "120px" }}>
                                                         {statusInfo.actionText} ➜
                                                     </button>
                                                 ) : (
@@ -179,29 +477,362 @@ export default function Dashboard() {
                             })}
                             {orders.length === 0 && (
                                 <tr>
-                                    <td colSpan="6" style={{ padding: "40px", textAlign: "center", color: "#888", fontSize: "16px" }}>
-                                        Hệ thống không có đơn hàng nào vào lúc này.
-                                    </td>
+                                    <td colSpan="6" style={{ padding: "40px", textAlign: "center", color: "#888", fontSize: "16px" }}>Hệ thống không có đơn hàng nào vào lúc này.</td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
                 </div>
             </div>
+        </>
+    );
 
-            {/* Chút CSS cho hiệu ứng Hover trên từng hàng của Bảng */}
+    // RENDER: GIAO DIỆN TAB MÓN ĂN
+    const renderProductTab = () => (
+        <div style={{ display: "flex", gap: "20px", alignItems: "flex-start", flexDirection: "row" }}>
+            
+            {/* Cột trái: Form thêm món */}
+            <div style={{ flex: "0 0 350px", backgroundColor: "#fff", padding: "25px", borderRadius: "10px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", position: "sticky", top: "20px" }}>
+                <h3 style={{ marginTop: 0, marginBottom: "20px", color: "#333", borderBottom: "2px solid #eee", paddingBottom: "10px", fontSize: "18px" }}>
+                    Tạo Món Ăn Mới
+                </h3>
+                <form onSubmit={handleAddProduct} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+                    <div>
+                        <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "bold", fontSize: "14px" }}>Tên món <span style={{color: "red"}}>*</span></label>
+                        <input required type="text" value={newProduct.tenMon} onChange={(e) => setNewProduct({...newProduct, tenMon: e.target.value})} style={{ width: "100%", padding: "12px", borderRadius: "6px", border: "1px solid #ddd", boxSizing: "border-box", fontSize: "15px", outline: "none" }} placeholder="VD: Bún Bò Huế" />
+                    </div>
+                    <div>
+                        <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "bold", fontSize: "14px" }}>Giá tiền (VNĐ) <span style={{color: "red"}}>*</span></label>
+                        <input required type="number" min="0" value={newProduct.giaTien} onChange={(e) => setNewProduct({...newProduct, giaTien: e.target.value})} style={{ width: "100%", padding: "12px", borderRadius: "6px", border: "1px solid #ddd", boxSizing: "border-box", fontSize: "15px", outline: "none" }} placeholder="VD: 55000" />
+                    </div>
+                    <div>
+                        <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "bold", fontSize: "14px" }}>Hình ảnh thu nhỏ (Tải lên từ máy)</label>
+                        <input type="file" accept="image/*" onChange={handleImageUpload} style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "2px dashed #FF5722", boxSizing: "border-box", fontSize: "14px", outline: "none", cursor: "pointer", backgroundColor: "#fff5f2" }} />
+                        
+                        {isUploading && <div style={{ fontSize: "13px", color: "#2196F3", marginTop: "8px", fontWeight: "bold" }}>⏳ Đang tải ảnh lên máy chủ...</div>}
+                        
+                        {newProduct.hinhAnh && !isUploading && (
+                            <div style={{ marginTop: "12px", textAlign: "center", backgroundColor: "#fafafa", padding: "10px", borderRadius: "8px", border: "1px solid #eee" }}>
+                                <div style={{ fontSize: "12px", color: "#4CAF50", marginBottom: "8px", fontWeight: "bold" }}>✓ Tải ảnh thành công (Xem trước)</div>
+                                <img src={newProduct.hinhAnh} style={{ maxWidth: "100%", height: "120px", objectFit: "cover", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }} alt="Preview" />
+                            </div>
+                        )}
+                    </div>
+                    <div>
+                        <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "bold", fontSize: "14px" }}>Mô tả ngắn</label>
+                        <textarea value={newProduct.moTa} onChange={(e) => setNewProduct({...newProduct, moTa: e.target.value})} style={{ width: "100%", padding: "12px", borderRadius: "6px", border: "1px solid #ddd", minHeight: "100px", boxSizing: "border-box", fontSize: "15px", resize: "vertical", outline: "none" }} placeholder="VD: Thơm ngon mời bạn ăn nha..." />
+                    </div>
+                    <button type="submit" style={{ padding: "14px", backgroundColor: "#FF5722", color: "white", border: "none", borderRadius: "6px", fontWeight: "bold", cursor: "pointer", marginTop: "10px", fontSize: "16px", boxShadow: "0 4px 10px rgba(255, 87, 34, 0.3)", transition: "0.2s" }}>
+                        + Lưu Vào Menu
+                    </button>
+                </form>
+            </div>
+
+            {/* Cột phải: Bảng danh sách món */}
+            <div style={{ flex: 1, backgroundColor: "#fff", borderRadius: "10px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", overflow: "hidden" }}>
+                <div style={{ padding: "20px 25px", borderBottom: "1px solid #eee", backgroundColor: "#fafafa", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <h2 style={{ margin: 0, fontSize: "20px", color: "#333" }}>
+                        {showDeleted ? "Thùng Rác (Món đã xóa)" : "Danh Sách Món Ăn DB"}
+                    </h2>
+                    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                        <span style={{ fontSize: "14px", color: "#888", backgroundColor: "#E3F2FD", padding: "4px 10px", borderRadius: "20px", color: "#1976D2", fontWeight: "bold" }}>
+                            Tổng số: {products.length} món
+                        </span>
+                        <button 
+                            onClick={() => setShowDeleted(!showDeleted)}
+                            style={{ padding: "6px 12px", backgroundColor: showDeleted ? "#F44336" : "#f5f5f5", color: showDeleted ? "white" : "#555", border: "1px solid #ddd", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", fontSize: "14px", transition: "0.3s" }}
+                        >
+                            {showDeleted ? "← Về Danh sách Menu" : "🗑️ Mở Thùng Rác"}
+                        </button>
+                    </div>
+                </div>
+                
+                {isLoading ? (
+                    <div style={{ padding: "50px", textAlign: "center", color: "#888", fontSize: "16px" }}>🔄 Đang tải dữ liệu thực đơn từ Database...</div>
+                ) : (
+                    <div style={{ overflowX: "auto", maxHeight: "800px", overflowY: "auto" }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+                            <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
+                                <tr style={{ backgroundColor: "#f5f5f5", color: "#555", fontSize: "15px", boxShadow: "0 2px 2px -1px rgba(0,0,0,0.1)" }}>
+                                    <th style={{ padding: "18px 20px", borderBottom: "2px solid #ddd", width: "60px" }}>ID</th>
+                                    <th style={{ padding: "18px 20px", borderBottom: "2px solid #ddd" }}>Thông tin món ăn</th>
+                                    <th style={{ padding: "18px 20px", borderBottom: "2px solid #ddd", width: "130px" }}>Giá Bán</th>
+                                    <th style={{ padding: "18px 20px", borderBottom: "2px solid #ddd", width: "120px" }}>Tình trạng</th>
+                                    <th style={{ padding: "18px 20px", borderBottom: "2px solid #ddd", textAlign: "right", width: "200px" }}>Hành Động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {products.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="5" style={{ padding: "40px", textAlign: "center", color: "#888", fontStyle: "italic" }}>
+                                            Chưa có món ăn nào trong hệ thống. Khách hàng sẽ thấy menu rỗng!
+                                        </td>
+                                    </tr>
+                                ) : products.map((food, index) => (
+                                    <tr key={food.maMon} style={{ borderBottom: "1px solid #eee", backgroundColor: index % 2 === 0 ? "#fff" : "#fafafa", transition: "0.2s" }} className="table-row-hover">
+                                        <td style={{ padding: "15px 20px", color: "#888", fontWeight: "bold" }}>#{food.maMon}</td>
+                                        <td style={{ padding: "15px 20px" }}>
+                                            <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+                                                {food.hinhAnh ? (
+                                                    <img src={food.hinhAnh} style={{ width: "50px", height: "50px", borderRadius: "8px", objectFit: "cover", boxShadow: "0 2px 5px rgba(0,0,0,0.1)" }} alt={food.tenMon} />
+                                                ) : (
+                                                    <div style={{ width: "50px", height: "50px", borderRadius: "8px", backgroundColor: "#e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: "12px" }}>No IMG</div>
+                                                )}
+                                                <div>
+                                                    <div style={{ fontWeight: "bold", color: "#333", fontSize: "16px", marginBottom: "4px" }}>
+                                                        {food.daXoa ? <span style={{ color: "red", border: "1px solid red", padding: "2px 4px", fontSize: "10px", borderRadius: "4px", marginRight: "8px" }}>ĐÃ XÓA</span> : null}
+                                                        {food.tenMon}
+                                                    </div>
+                                                    <div style={{ fontSize: "13px", color: "#777", maxWidth: "250px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                                        {food.moTa || "Không có mô tả"}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: "15px 20px", color: "#FF5722", fontWeight: "bold", fontSize: "16px" }}>
+                                            {food.giaTien.toLocaleString('vi-VN')} đ
+                                        </td>
+                                        <td style={{ padding: "15px 20px" }}>
+                                            {food.conHang !== false ? (
+                                                <span style={{ padding: "6px 12px", backgroundColor: "#E8F5E9", color: "#2E7D32", borderRadius: "20px", fontSize: "12px", fontWeight: "bold", border: "1px solid #A5D6A7" }}>
+                                                    🟢 Còn hàng
+                                                </span>
+                                            ) : (
+                                                <span style={{ padding: "6px 12px", backgroundColor: "#FFEBEE", color: "#C62828", borderRadius: "20px", fontSize: "12px", fontWeight: "bold", border: "1px solid #EF9A9A" }}>
+                                                    🔴 Hết hàng
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td style={{ padding: "15px 20px", textAlign: "right" }}>
+                                            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+                                                {food.daXoa ? (
+                                                    <button
+                                                        onClick={() => handleRestoreProduct(food.maMon)}
+                                                        style={{
+                                                            padding: "8px 15px", backgroundColor: "#E3F2FD", color: "#1976D2",
+                                                            border: "1px solid #90CAF9", borderRadius: "6px",
+                                                            cursor: "pointer", fontSize: "13px", fontWeight: "bold", transition: "0.2s"
+                                                        }}
+                                                    >
+                                                        ↩️ Khôi Phục Lại Món Này
+                                                    </button>
+                                                ) : (
+                                                    <>
+                                                        <button
+                                                            onClick={() => openEditModal(food)}
+                                                            style={{
+                                                                padding: "8px 12px", backgroundColor: "#fff", color: "#1976D2",
+                                                                border: "1px solid #90CAF9", borderRadius: "6px",
+                                                                cursor: "pointer", fontSize: "13px", fontWeight: "bold", transition: "0.2s"
+                                                            }}
+                                                        >
+                                                            ✏️ Sửa
+                                                        </button>
+
+                                                        <button 
+                                                            onClick={() => handleToggleProductStatus(food.maMon)}
+                                                            style={{ 
+                                                                padding: "8px 12px", 
+                                                                backgroundColor: "#fff", 
+                                                                color: food.conHang !== false ? "#F57C00" : "#388E3C", 
+                                                                border: `1px solid ${food.conHang !== false ? "#FFB74D" : "#81C784"}`, 
+                                                                borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "bold", transition: "0.2s"
+                                                            }}
+                                                            title={food.conHang !== false ? "Đánh dấu là Hết hàng" : "Đánh dấu là Còn hàng"}
+                                                        >
+                                                            {food.conHang !== false ? "Báo Hết" : "Mở Bán Lại"}
+                                                        </button>
+
+                                                        <button 
+                                                            onClick={() => confirmActionDelete(food.maMon)}
+                                                            style={{ 
+                                                                padding: "8px 12px", backgroundColor: "#fff", color: "#d32f2f", border: "1px solid #ef5350", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "bold", transition: "0.2s"
+                                                            }}
+                                                        >
+                                                            Xóa
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+
+    return (
+        <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "20px", fontFamily: "sans-serif", position: "relative" }}>
+            
+            {/* THÔNG BÁO TOAST */}
+            {notification && (
+                <div style={{
+                    position: "fixed", top: "20px", right: "20px", zIndex: 1000,
+                    backgroundColor: notification.type === "success" ? "#4CAF50" : "#F44336",
+                    color: "white", padding: "15px 25px", borderRadius: "8px",
+                    boxShadow: "0 4px 15px rgba(0,0,0,0.2)", outline: "none", fontWeight: "bold",
+                    animation: "fadeIn 0.3s, fadeOut 0.3s 2.7s forwards"
+                }}>
+                    {notification.message}
+                </div>
+            )}
+
+            {/* MODAL CHỈNH SỬA MÓN ĂN */}
+            {editProduct && (
+                <div style={{
+                    position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: "rgba(0,0,0,0.55)", zIndex: 2000,
+                    display: "flex", justifyContent: "center", alignItems: "center"
+                }} onClick={(e) => { if (e.target === e.currentTarget) setEditProduct(null); }}>
+                    <div style={{
+                        backgroundColor: "#fff", padding: "32px", borderRadius: "14px",
+                        width: "100%", maxWidth: "520px", boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+                        maxHeight: "90vh", overflowY: "auto"
+                    }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+                            <h3 style={{ margin: 0, color: "#333", fontSize: "20px" }}>✏️ Chỉnh sửa món ăn</h3>
+                            <button onClick={() => setEditProduct(null)} style={{ background: "none", border: "none", fontSize: "22px", cursor: "pointer", color: "#888", lineHeight: 1 }}>✕</button>
+                        </div>
+
+                        <form onSubmit={handleEditSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                            <div>
+                                <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", color: "#555", fontSize: "14px" }}>Tên món <span style={{ color: "red" }}>*</span></label>
+                                <input
+                                    required type="text"
+                                    value={editProduct.tenMon || ""}
+                                    onChange={(e) => setEditProduct(prev => ({ ...prev, tenMon: e.target.value }))}
+                                    style={{ width: "100%", padding: "11px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "15px", boxSizing: "border-box", outline: "none" }}
+                                />
+                            </div>
+
+                            <div>
+                                <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", color: "#555", fontSize: "14px" }}>Giá tiền (VNĐ) <span style={{ color: "red" }}>*</span></label>
+                                <input
+                                    required type="number" min="0"
+                                    value={editProduct.giaTien || ""}
+                                    onChange={(e) => setEditProduct(prev => ({ ...prev, giaTien: e.target.value }))}
+                                    style={{ width: "100%", padding: "11px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "15px", boxSizing: "border-box", outline: "none" }}
+                                />
+                            </div>
+
+                            <div>
+                                <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", color: "#555", fontSize: "14px" }}>Mô tả</label>
+                                <textarea
+                                    value={editProduct.moTa || ""}
+                                    onChange={(e) => setEditProduct(prev => ({ ...prev, moTa: e.target.value }))}
+                                    rows="3"
+                                    style={{ width: "100%", padding: "11px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "15px", boxSizing: "border-box", resize: "vertical", outline: "none" }}
+                                />
+                            </div>
+
+                            <div>
+                                <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", color: "#555", fontSize: "14px" }}>Đổi hình ảnh (tùy chọn)</label>
+                                <input type="file" accept="image/*" onChange={handleEditImageUpload}
+                                    style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "2px dashed #1976D2", boxSizing: "border-box", cursor: "pointer", backgroundColor: "#E3F2FD" }}
+                                />
+                                {isEditUploading && <div style={{ marginTop: "6px", fontSize: "13px", color: "#1976D2", fontWeight: "bold" }}>⏳ Đang tải ảnh lên...</div>}
+                                {editProduct.hinhAnh && !isEditUploading && (
+                                    <div style={{ marginTop: "10px", textAlign: "center" }}>
+                                        <img src={editProduct.hinhAnh} alt="preview" style={{ height: "100px", objectFit: "cover", borderRadius: "8px", border: "1px solid #ddd" }} />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+                                <button type="button" onClick={() => setEditProduct(null)}
+                                    style={{ flex: 1, padding: "13px", border: "1px solid #ddd", borderRadius: "8px", background: "#fff", cursor: "pointer", fontWeight: "bold", color: "#555", fontSize: "15px" }}
+                                >
+                                    Hủy
+                                </button>
+                                <button type="submit"
+                                    style={{ flex: 2, padding: "13px", border: "none", borderRadius: "8px", background: "#1976D2", color: "white", cursor: "pointer", fontWeight: "bold", fontSize: "15px", boxShadow: "0 4px 12px rgba(25,118,210,0.3)" }}
+                                >
+                                    💾 Lưu thay đổi
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL XÁC NHẬN XÓA */}
+            {confirmDelete && (
+                <div style={{
+                    position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: "rgba(0,0,0,0.5)", zIndex: 2000,
+                    display: "flex", justifyContent: "center", alignItems: "center"
+                }}>
+                    <div style={{ backgroundColor: "#fff", padding: "30px", borderRadius: "10px", maxWidth: "400px", textAlign: "center", boxShadow: "0 10px 30px rgba(0,0,0,0.2)" }}>
+                        <div style={{ fontSize: "50px", marginBottom: "10px" }}>⚠️</div>
+                        <h3 style={{ margin: "0 0 15px 0", color: "#333" }}>Xác nhận xóa món ăn?</h3>
+                        <p style={{ color: "#666", marginBottom: "25px", fontSize: "15px", lineHeight: "1.5" }}>Hành động này không thể hoàn tác. Món ăn sẽ bị xóa vĩnh viễn khỏi thực đơn.</p>
+                        <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+                            <button onClick={() => setConfirmDelete(null)} style={{ padding: "10px 20px", border: "1px solid #ccc", backgroundColor: "#fff", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", color: "#555", transition: "0.2s" }} className="btn-hover">
+                                Hủy Bỏ
+                            </button>
+                            <button onClick={executeDelete} style={{ padding: "10px 20px", border: "none", backgroundColor: "#F44336", color: "white", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", transition: "0.2s" }} className="btn-hover">
+                                Vâng, Xóa Luôn
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px", borderBottom: "2px solid #eee", paddingBottom: "20px" }}>
+                <h1 style={{ color: "#333", margin: 0, borderLeft: "5px solid #FF5722", paddingLeft: "15px" }}>
+                    Bảng Điều Khiển Quản Trị
+                </h1>
+
+                {/* Tab Menu Switcher */}
+                <div style={{ display: "flex", gap: "5px", backgroundColor: "#f5f5f5", padding: "6px", borderRadius: "10px", border: "1px solid #ddd" }}>
+                    <button 
+                        onClick={() => setActiveTab("orders")}
+                        style={{
+                            padding: "10px 24px", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", fontSize: "15px", transition: "0.2s",
+                            backgroundColor: activeTab === "orders" ? "#fff" : "transparent",
+                            color: activeTab === "orders" ? "#FF5722" : "#666",
+                            boxShadow: activeTab === "orders" ? "0 2px 8px rgba(0,0,0,0.1)" : "none"
+                        }}
+                    >
+                        📋 Đơn Hàng
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab("products")}
+                        style={{
+                            padding: "10px 24px", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", fontSize: "15px", transition: "0.2s",
+                            backgroundColor: activeTab === "products" ? "#fff" : "transparent",
+                            color: activeTab === "products" ? "#FF5722" : "#666",
+                            boxShadow: activeTab === "products" ? "0 2px 8px rgba(0,0,0,0.1)" : "none"
+                        }}
+                    >
+                        🍔 Món Ăn
+                    </button>
+                </div>
+            </div>
+
+            {/* Render Component dựa theo Tab đang Active */}
+            {activeTab === "orders" ? renderOrderTab() : renderProductTab()}
+
             <style>
                 {`
                     .table-row-hover:hover {
                         background-color: #f1f8e9 !important;
                     }
                     button:hover {
-                        opacity: 0.85;
                         transform: translateY(-1px);
                     }
                     button:active {
                         transform: translateY(1px);
                     }
+                    .btn-hover:hover {
+                        opacity: 0.8 !important;
+                    }
+                    @keyframes fadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+                    @keyframes fadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-20px); } }
                 `}
             </style>
         </div>

@@ -1,0 +1,73 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.5.2 Chrome/142.0.7444.265 Electron/39.6.1 Safari/537.36" version="29.5.2">
+  <diagram name="ERD_Chuan_Hoa" id="T-GXBDfhiVqwcKtY2lPH">
+    <mxGraphModel dx="858" dy="40" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="0Wikn8fbzwCfj7RDIsLA-1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5;fillColor=#102027;strokeColor=#4FC3F7;fontColor=#FFFFFF;" value="&lt;b&gt;TaiKhoan&lt;/b&gt;&lt;hr&gt;&lt;b&gt;PK&lt;/b&gt; maTaiKhoan int&lt;br&gt;tenDangNhap string&lt;br&gt;matKhau string&lt;br&gt;loaiTaiKhoan string" vertex="1">
+          <mxGeometry height="150" width="180" x="1900" y="1570" as="geometry" />
+        </mxCell>
+        <mxCell id="0Wikn8fbzwCfj7RDIsLA-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5;fillColor=#102027;strokeColor=#4FC3F7;fontColor=#FFFFFF;" value="&lt;b&gt;KhachHang&lt;/b&gt;&lt;hr&gt;&lt;b&gt;PK&lt;/b&gt; maKhachHang int&lt;br&gt;maTaiKhoan &lt;b&gt;FK&lt;/b&gt;, int&lt;br&gt;hoTen string&lt;br&gt;soDienThoai string" vertex="1">
+          <mxGeometry height="130" width="180" x="1900" y="1770" as="geometry" />
+        </mxCell>
+        <mxCell id="0Wikn8fbzwCfj7RDIsLA-5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5;fillColor=#3E2723;strokeColor=#FFB74D;fontColor=#FFFFFF;" value="&lt;b&gt;GioHang&lt;/b&gt;&lt;hr&gt;&lt;b&gt;PK&lt;/b&gt; maGioHang int&lt;br&gt;maKhachHang &lt;b&gt;FK&lt;/b&gt;, int" vertex="1">
+          <mxGeometry height="100" width="180" x="1900" y="1950" as="geometry" />
+        </mxCell>
+        <mxCell id="0Wikn8fbzwCfj7RDIsLA-6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5;fillColor=#3E2723;strokeColor=#FFB74D;fontColor=#FFFFFF;" value="&lt;b&gt;DonHang&lt;/b&gt;&lt;hr&gt;&lt;b&gt;PK&lt;/b&gt; maDonHang int&lt;br&gt;maKhachHang &lt;b&gt;FK&lt;/b&gt;, int&lt;br&gt;ngayDat datetime&lt;br&gt;tongTien double&lt;br&gt;trangThaiDonHang string&lt;br&gt;ghiChu string&lt;br&gt;diaChiGiaoHang string&lt;br&gt;soDienThoaiNhan string" vertex="1">
+          <mxGeometry height="150" width="200" x="1890" y="2120" as="geometry" />
+        </mxCell>
+        <mxCell id="0Wikn8fbzwCfj7RDIsLA-8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5;fillColor=#23153C;strokeColor=#B39DDB;fontColor=#FFFFFF;" value="&lt;b&gt;ChiTietGioHang&lt;/b&gt;&lt;hr&gt;&lt;b&gt;PK, FK&lt;/b&gt; maGioHang int&lt;br&gt;&lt;b&gt;PK, FK&lt;/b&gt; maMon int&lt;br&gt;soLuong int" vertex="1">
+          <mxGeometry height="100" width="180" x="2180" y="1950" as="geometry" />
+        </mxCell>
+        <mxCell id="0Wikn8fbzwCfj7RDIsLA-9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5;fillColor=#23153C;strokeColor=#B39DDB;fontColor=#FFFFFF;" value="&lt;b&gt;ChiTietDonHang&lt;/b&gt;&lt;hr&gt;&lt;b&gt;PK, FK&lt;/b&gt; maDonHang int&lt;br&gt;&lt;b&gt;PK, FK&lt;/b&gt; maMon int&lt;br&gt;soLuong int&lt;br&gt;giaBanLucDo double" vertex="1">
+          <mxGeometry height="120" width="180" x="2180" y="2120" as="geometry" />
+        </mxCell>
+        <mxCell id="0Wikn8fbzwCfj7RDIsLA-10" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5;fillColor=#1B3320;strokeColor=#81C784;fontColor=#FFFFFF;" value="&lt;b&gt;MonAn&lt;/b&gt;&lt;hr&gt;&lt;b&gt;PK&lt;/b&gt; maMon int&lt;br&gt;maDanhMuc &lt;b&gt;FK&lt;/b&gt;, int&lt;br&gt;tenMon string&lt;br&gt;giaTien double&lt;br&gt;hinhAnh string&lt;br&gt;moTa string&lt;br&gt;conHang boolean&lt;br&gt;phanTramGiamGia double&lt;br&gt;soLuongTon int&lt;br&gt;daXoa boolean" vertex="1">
+          <mxGeometry height="170" width="180" x="2450" y="2000" as="geometry" />
+        </mxCell>
+        <mxCell id="0Wikn8fbzwCfj7RDIsLA-12" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5;fillColor=#1B3320;strokeColor=#81C784;fontColor=#FFFFFF;" value="&lt;b&gt;DanhMuc&lt;/b&gt;&lt;hr&gt;&lt;b&gt;PK&lt;/b&gt; maDanhMuc int&lt;br&gt;tenDanhMuc string&lt;br&gt;moTa string" vertex="1">
+          <mxGeometry height="100" width="180" x="2700" y="2090" as="geometry" />
+        </mxCell>
+        <mxCell id="0Wikn8fbzwCfj7RDIsLA-14" edge="1" parent="1" source="0Wikn8fbzwCfj7RDIsLA-1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERmandOne;startArrow=ERmandOne;endFill=0;startFill=0;strokeColor=#B0BEC5;" target="0Wikn8fbzwCfj7RDIsLA-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0Wikn8fbzwCfj7RDIsLA-15" edge="1" parent="1" source="0Wikn8fbzwCfj7RDIsLA-3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERmandOne;startArrow=ERmandOne;endFill=0;startFill=0;strokeColor=#B0BEC5;" target="0Wikn8fbzwCfj7RDIsLA-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0Wikn8fbzwCfj7RDIsLA-18" edge="1" parent="1" source="0Wikn8fbzwCfj7RDIsLA-3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERcrow;startArrow=ERmandOne;endFill=0;startFill=0;strokeColor=#B0BEC5;" target="0Wikn8fbzwCfj7RDIsLA-6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1870" y="1835" />
+              <mxPoint x="1870" y="2195" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0Wikn8fbzwCfj7RDIsLA-20" edge="1" parent="1" source="0Wikn8fbzwCfj7RDIsLA-5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERcrow;startArrow=ERmandOne;endFill=0;startFill=0;strokeColor=#B0BEC5;" target="0Wikn8fbzwCfj7RDIsLA-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0Wikn8fbzwCfj7RDIsLA-21" edge="1" parent="1" source="0Wikn8fbzwCfj7RDIsLA-6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERcrow;startArrow=ERmandOne;endFill=0;startFill=0;strokeColor=#B0BEC5;" target="0Wikn8fbzwCfj7RDIsLA-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0Wikn8fbzwCfj7RDIsLA-22" edge="1" parent="1" source="0Wikn8fbzwCfj7RDIsLA-10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERcrow;startArrow=ERmandOne;endFill=0;startFill=0;strokeColor=#B0BEC5;" target="0Wikn8fbzwCfj7RDIsLA-8">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2400" y="2040" />
+              <mxPoint x="2400" y="2000" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0Wikn8fbzwCfj7RDIsLA-23" edge="1" parent="1" source="0Wikn8fbzwCfj7RDIsLA-10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERcrow;startArrow=ERmandOne;endFill=0;startFill=0;strokeColor=#B0BEC5;" target="0Wikn8fbzwCfj7RDIsLA-9">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2400" y="2130" />
+              <mxPoint x="2400" y="2180" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0Wikn8fbzwCfj7RDIsLA-25" edge="1" parent="1" source="0Wikn8fbzwCfj7RDIsLA-12" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERcrow;startArrow=ERmandOne;endFill=0;startFill=0;strokeColor=#B0BEC5;" target="0Wikn8fbzwCfj7RDIsLA-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,8 @@
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+food-order-backend/static/uploads/
+.DS_Store

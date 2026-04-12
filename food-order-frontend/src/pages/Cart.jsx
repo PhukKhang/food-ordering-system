@@ -1,9 +1,14 @@
 import { useCart } from "../context/CartContext";
+import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 export default function Cart() {
-    const { cart, removeFromCart, updateQuantity, clearCart, tongTien } = useCart();
+    const { cart, removeFromCart, updateQuantity, clearCart, tongTien, fetchCart } = useCart();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (fetchCart) fetchCart();
+    }, [fetchCart]);
 
     return (
         <div style={{ maxWidth: "900px", margin: "0 auto", padding: "20px", fontFamily: "sans-serif" }}>

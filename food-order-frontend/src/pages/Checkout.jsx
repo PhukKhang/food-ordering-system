@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 
 export default function Checkout() {
-    const { cart, tongTien } = useCart();
+    const { cart, tongTien, clearCart } = useCart();
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
@@ -30,18 +30,41 @@ export default function Checkout() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleCheckout = (e) => {
+    const handleCheckout = async (e) => {
         e.preventDefault();
-        // Giả lập lưu đơn hàng (sau này có Backend sẽ gọi API ở đây)
-        console.log("Dữ liệu đơn đặt hàng tạm thời:", {
-            khachHang: formData,
-            phuongThucThanhToan: phuongThucTT,
-            tổngTien: tongTien + 15000,
-            danhSachMon: cart
-        });
+        const userStr = sessionStorage.getItem("user");
+        if (!userStr) {
+            alert("Vui lòng đăng nhập để thanh toán!");
+            navigate("/login");
+            return;
+        }
+        const user = JSON.parse(userStr);
 
-        // Chuyển sang trang báo Thành công
-        navigate("/success");
+        try {
+            const response = await fetch("http://localhost:8000/orders/checkout", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    user_id: user.userId,
+                    diaChiGiaoHang: formData.diaChi,
+                    soDienThoaiNhan: formData.soDienThoai,
+                    ghiChu: formData.ghiChu || ""
+                })
+            });
+            
+            if (response.ok) {
+                // Clear state local content since DB is clean
+                if(clearCart) clearCart();
+                // Chuyển sang trang báo Thành công
+                navigate("/success");
+            } else {
+                const data = await response.json();
+                alert(data.detail || "Lỗi thanh toán!");
+            }
+        } catch (error) {
+            console.error("Lỗi đặt hàng:", error);
+            alert("Lỗi kết nối máy chủ đặt hàng");
+        }
     };
 
     return (

@@ -1,0 +1,43 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.5.2 Chrome/142.0.7444.265 Electron/39.6.1 Safari/537.36" version="29.5.2">
+  <diagram name="Page-1" id="XYINxuwVdd8lyq5YxEjx">
+    <mxGraphModel dx="2985" dy="1425" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="BU2uePi4cP-4BbgurQ_n-1" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" value="KHACHHANG" vertex="1">
+          <mxGeometry height="60" width="30" x="-440" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="BU2uePi4cP-4BbgurQ_n-2" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" value="NHANVIEN" vertex="1">
+          <mxGeometry height="60" width="30" x="830" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="BU2uePi4cP-4BbgurQ_n-3" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" value="QUANLI" vertex="1">
+          <mxGeometry height="60" width="30" x="830" y="710" as="geometry" />
+        </mxCell>
+        <mxCell id="BU2uePi4cP-4BbgurQ_n-8" parent="1" style="swimlane;whiteSpace=wrap;html=1;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" value="FOOD ORDERING SYSTEM" vertex="1">
+          <mxGeometry height="1320" width="1080" x="-360" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="iygCWiQNkqlSWbUDY-T2-2" parent="BU2uePi4cP-4BbgurQ_n-8" style="ellipse;whiteSpace=wrap;html=1;" value="Đăng kí tài khoản" vertex="1">
+          <mxGeometry height="80" width="120" x="40" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="iygCWiQNkqlSWbUDY-T2-3" parent="BU2uePi4cP-4BbgurQ_n-8" style="ellipse;whiteSpace=wrap;html=1;" value="Đăng nhập" vertex="1">
+          <mxGeometry height="80" width="120" x="330" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="iygCWiQNkqlSWbUDY-T2-4" parent="BU2uePi4cP-4BbgurQ_n-8" style="ellipse;whiteSpace=wrap;html=1;" value="Tra cứu thực đơn" vertex="1">
+          <mxGeometry height="80" width="120" x="40" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="iygCWiQNkqlSWbUDY-T2-5" parent="BU2uePi4cP-4BbgurQ_n-8" style="ellipse;whiteSpace=wrap;html=1;" value="Quản lý giỏ hàng" vertex="1">
+          <mxGeometry height="80" width="120" x="40" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="iygCWiQNkqlSWbUDY-T2-6" parent="BU2uePi4cP-4BbgurQ_n-8" style="ellipse;whiteSpace=wrap;html=1;" value="Đặt hàng và thanh toán" vertex="1">
+          <mxGeometry height="80" width="120" x="40" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="iygCWiQNkqlSWbUDY-T2-7" parent="BU2uePi4cP-4BbgurQ_n-8" style="ellipse;whiteSpace=wrap;html=1;" value="Tra cứu đơn hàng" vertex="1">
+          <mxGeometry height="80" width="120" x="40" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="iygCWiQNkqlSWbUDY-T2-8" parent="BU2uePi4cP-4BbgurQ_n-8" style="ellipse;whiteSpace=wrap;html=1;" value="Tìm kiếm món ăn" vertex="1">
+          <mxGeometry height="80" width="120" x="275" y="290" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
