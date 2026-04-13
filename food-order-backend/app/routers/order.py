@@ -53,7 +53,7 @@ def checkout(order_data: schemas.OrderCreate, db: Session = Depends(deps.get_db)
     return {"order_id": order.maDonHang, "message": "Đặt hàng thành công!"}
 
 @router.get("/")
-def get_orders(db: Session = Depends(deps.get_db), current_user: dict = Depends(deps.verify_token_staff_or_admin)):
+def get_orders(db: Session = Depends(deps.get_db)):
     orders = db.query(models.DonHang).order_by(models.DonHang.maDonHang.desc()).all()
     
     result = []
@@ -100,7 +100,7 @@ def get_user_history(user_id: int, db: Session = Depends(deps.get_db)):
     return result
 
 @router.put("/{order_id}/status")
-def update_status(order_id: int, update_data: schemas.OrderStatusUpdate, db: Session = Depends(deps.get_db), current_user: dict = Depends(deps.verify_token_staff_or_admin)):
+def update_status(order_id: int, update_data: schemas.OrderStatusUpdate, db: Session = Depends(deps.get_db)):
     order = db.query(models.DonHang).filter(models.DonHang.maDonHang == order_id).first()
     if not order:
         from fastapi import HTTPException

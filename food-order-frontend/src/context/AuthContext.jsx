@@ -13,27 +13,52 @@ export function AuthProvider({ children }) {
         }
     }, []);
 
-    const login = (username, password) => {
-        return new Promise((resolve, reject) => {
-            // Mock Data Hardcode theo yêu cầu
+    const login = async (username, password) => {
+        return new Promise(async (resolve, reject) => {
+            // ==========================================================
+            // BƯỚC 1: Kiểm tra tài khoản ADMIN/STAFF cứng (mock data)
+            // ==========================================================
             if (username === "staff01" && password === "123") {
                 const staffUser = { username: "staff01", role: "STAFF", name: "Nhân viên 01" };
                 setUser(staffUser);
                 sessionStorage.setItem("user", JSON.stringify(staffUser));
-                resolve(staffUser);
-            } else if ((username === "admin01" && password === "123") || (username === "admin" && password === "admin123")) {
-                const adminUser = { username: username === "admin" ? "admin" : "admin01", role: "ADMIN", name: "Quản trị viên" };
+                return resolve(staffUser);
+            }
+            if ((username === "admin01" && password === "123") || (username === "admin" && password === "admin123")) {
+                const adminUser = { username: username, role: "ADMIN", name: "Quản trị viên" };
                 setUser(adminUser);
                 sessionStorage.setItem("user", JSON.stringify(adminUser));
-                resolve(adminUser);
-            } else if (username === "khachhang" && password === "123") {
-                // Hardcode cho customer nếu muốn dùng để pass auth checkout
-                const customerUser = { username: "khachhang", role: "customer", name: "Khách Hàng VIP" };
-                setUser(customerUser);
-                sessionStorage.setItem("user", JSON.stringify(customerUser));
-                resolve(customerUser);
-            } else {
-                reject(new Error("Tên đăng nhập hoặc mật khẩu không đúng!"));
+                return resolve(adminUser);
+            }
+
+            // ==========================================================
+            // BƯỚC 2: Không phải mock -> Gọi API Backend thật
+            // ==========================================================
+            try {
+                const response = await fetch("http://localhost:8000/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await response.json();
+
+                if (!response.ok || data.error) {
+                    return reject(new Error(data.detail || "Tên đăng nhập hoặc mật khẩu không đúng!"));
+                }
+
+                // Tạo đối tượng user từ response API
+                const realUser = {
+                    token: data.access_token,
+                    userId: data.userId,
+                    username: data.username,
+                    name: data.hoTen || data.username,
+                    role: data.role || "customer"
+                };
+                setUser(realUser);
+                sessionStorage.setItem("user", JSON.stringify(realUser));
+                return resolve(realUser);
+            } catch (err) {
+                return reject(new Error("Lỗi kết nối máy chủ. Vui lòng kiểm tra Backend!"));
             }
         });
     };

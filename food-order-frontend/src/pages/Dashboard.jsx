@@ -152,12 +152,27 @@ export default function Dashboard() {
         }
     };
 
+    // State hiển thị thời gian lần cuối refresh
+    const [lastRefreshed, setLastRefreshed] = useState(null);
+
+    const fetchOrdersAndTimestamp = async () => {
+        await fetchOrders();
+        setLastRefreshed(new Date());
+    };
+
     useEffect(() => {
         if (activeTab === "products") {
             fetchProducts();
             fetchCategories();
         } else if (activeTab === "orders") {
-            fetchOrders();
+            // Lần đầu tải ngay
+            fetchOrdersAndTimestamp();
+            // Tự động refresh mỗi 10 giây để bắt đơn mới
+            const interval = setInterval(() => {
+                fetchOrdersAndTimestamp();
+            }, 10000);
+            // Dọn dẹp khi rời tab
+            return () => clearInterval(interval);
         } else if (activeTab === "categories") {
             fetchCategories();
         }
@@ -502,6 +517,25 @@ export default function Dashboard() {
     // RENDER: GIAO DIỆN TAB ĐƠN HÀNG
     const renderOrderTab = () => (
         <>
+            {/* THANH TRẠNG THÁI TỰ ĐỘNG CẬP NHẬT */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", padding: "12px 18px", backgroundColor: "#E8F5E9", borderRadius: "8px", border: "1px solid #C8E6C9" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#2E7D32", fontSize: "14px", fontWeight: "bold" }}>
+                    <span style={{ width: "10px", height: "10px", backgroundColor: "#4CAF50", borderRadius: "50%", display: "inline-block", animation: "pulse 2s infinite" }}></span>
+                    🔄 Tự động cập nhật mỗi 10 giây
+                    {lastRefreshed && (
+                        <span style={{ fontWeight: "normal", color: "#555", marginLeft: "10px" }}>
+                            — Lần cuối: {lastRefreshed.toLocaleTimeString("vi-VN")}
+                        </span>
+                    )}
+                </div>
+                <button
+                    onClick={fetchOrdersAndTimestamp}
+                    style={{ padding: "8px 18px", backgroundColor: "#4CAF50", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", fontSize: "13px" }}
+                >
+                    ↻ Làm mới ngay
+                </button>
+            </div>
+
             {/* VÙNG THỐNG KÊ (CARDS) */}
             <div style={{ display: "flex", gap: "20px", marginBottom: "40px" }}>
                 <div style={{ flex: 1, backgroundColor: "#fff", padding: "25px", borderRadius: "10px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", borderTop: "5px solid #FFC107" }}>
