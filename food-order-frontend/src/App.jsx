@@ -8,6 +8,8 @@ import OrderSuccess from "./pages/OrderSuccess";
 import Cart from "./pages/Cart";
 import CustomerOrders from "./pages/CustomerOrders";
 import { CartProvider, useCart } from "./context/CartContext";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Component Navbar tách riêng để có thể xài được useCart
 function Navbar() {
@@ -52,7 +54,17 @@ function Navbar() {
         )}
 
         {/* Nút Giỏ Hàng có số lượng */}
-        <Link to="/cart" style={{ color: "white", textDecoration: "none", position: "relative" }}>
+        <Link 
+          to={user ? "/cart" : "/login"} 
+          onClick={(e) => {
+            if (!user) {
+              e.preventDefault();
+              toast.warning("Vui lòng đăng nhập để xem giỏ hàng!");
+              navigate("/login");
+            }
+          }}
+          style={{ color: "white", textDecoration: "none", position: "relative" }}
+        >
           🛒 Giỏ Hàng
           {tongSoLuong > 0 && (
             <span style={{
@@ -74,6 +86,7 @@ function App() {
     <CartProvider>
       <BrowserRouter>
         <Navbar />
+        <ToastContainer position="top-right" autoClose={3000} />
         <div style={{ padding: "20px" }}>
           <Routes>
             <Route path="/" element={<Home />} />

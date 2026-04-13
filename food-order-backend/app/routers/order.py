@@ -124,3 +124,15 @@ def cancel_order_customer(order_id: int, db: Session = Depends(deps.get_db), cur
     order.trangThaiDonHang = "cancelled"
     db.commit()
     return {"message": "Đã hủy đơn hàng"}
+
+@router.delete("/reset-all")
+def reset_all_orders(db: Session = Depends(deps.get_db), current_user: dict = Depends(deps.verify_token_admin)):
+    """Xóa toàn bộ lịch sử đơn hàng — chỉ Admin mới được dùng."""
+    # Xóa chi tiết đơn hàng trước (khóa ngoại)
+    db.query(models.ChiTietDonHang).delete()
+    # Xóa bảng đơn hàng
+    db.query(models.DonHang).delete()
+    # Xóa giỏ hàng tồn đọng
+    db.query(models.ChiTietGioHang).delete()
+    db.commit()
+    return {"message": "Đã xóa toàn bộ lịch sử đơn hàng và giỏ hàng thành công!"}

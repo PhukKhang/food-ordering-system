@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { toast } from "react-toastify";
 
 export default function Login() {
     // Tạo "kho lưu trữ" nhỏ (state) để nhớ tên đăng nhập và mật khẩu
@@ -24,7 +25,7 @@ export default function Login() {
             const data = await response.json();
 
             if (data.error) {
-                alert("Tên đăng nhập hoặc mật khẩu không đúng!");
+                toast.error("Tên đăng nhập hoặc mật khẩu không đúng!");
             } else {
                 // Lưu thông tin đăng nhập thật vào trình duyệt
                 sessionStorage.setItem("user", JSON.stringify({ 
@@ -43,7 +44,7 @@ export default function Login() {
             }
         } catch (error) {
             console.error("Lỗi đăng nhập:", error);
-            alert("Lỗi kết nối máy chủ");
+            toast.error("Lỗi kết nối máy chủ");
         }
     };
 

@@ -76,9 +76,10 @@ export default function Home() {
 
 
     return (
-        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "20px", fontFamily: "sans-serif" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "20px", fontFamily: "'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif" }}>
             <style>
                 {`
+                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap');
                     @keyframes fadeInCenter {
                         from { opacity: 0; transform: translate(-50%, -60%); }
                         to { opacity: 1; transform: translate(-50%, -50%); }
@@ -112,90 +113,117 @@ export default function Home() {
             )}
             <h1 style={{ textAlign: "center", color: "#FF5722", marginBottom: "30px", fontSize: "32px", fontWeight: "900" }}>KHÁM PHÁ THỰC ĐƠN</h1>
 
-            {/* THANH TÌM KIẾM & BỘ LỌC */}
-            <div style={{ backgroundColor: "#fff", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", marginBottom: "20px", display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "center", justifyContent: "space-between", border: "1px solid #f0f0f0" }}>
-                
-                {/* Search Bar */}
-                <div style={{ flex: "1 1 300px", position: "relative" }}>
+            {/* THANH TÌM KIẾM & BỘ LỌC CẢI TIẾN */}
+            <div style={{ marginBottom: "40px" }}>
+                {/* Search Bar - Big, centered */}
+                <div style={{ 
+                    maxWidth: "650px", margin: "0 auto 30px auto", position: "relative" 
+                }}>
                     <input 
                         type="text" 
-                        placeholder="🔍 Bạn đang thèm món gì? Gõ vào đây..."
+                        placeholder="Bạn đang thèm món gì? Gõ vào đây để tìm..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{ width: "100%", padding: "14px 15px", paddingLeft: "45px", borderRadius: "30px", border: "1px solid #ddd", fontSize: "16px", outline: "none", boxSizing: "border-box", boxShadow: "inset 0 2px 4px rgba(0,0,0,0.02)" }}
-                        onFocus={(e) => e.target.style.borderColor = "#FF5722"}
-                        onBlur={(e) => e.target.style.borderColor = "#ddd"}
+                        style={{ 
+                            width: "100%", padding: "20px 25px", paddingLeft: "65px", 
+                            borderRadius: "50px", border: "none", fontSize: "16px", 
+                            outline: "none", boxSizing: "border-box", 
+                            backgroundColor: "#fff", boxShadow: "0 8px 30px rgba(255, 87, 34, 0.12)",
+                            transition: "0.3s", color: "#333", fontWeight: "600"
+                        }}
+                        onFocus={(e) => e.target.style.boxShadow = "0 12px 35px rgba(255, 87, 34, 0.2)"}
+                        onBlur={(e) => e.target.style.boxShadow = "0 8px 30px rgba(255, 87, 34, 0.12)"}
                     />
+                    <span style={{ position: "absolute", left: "25px", top: "50%", transform: "translateY(-50%)", fontSize: "24px" }}>
+                        🔍
+                    </span>
                 </div>
 
-                {/* Price Filter Chips */}
-                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", padding: "5px 0" }}>
-                    <span style={{ fontWeight: "bold", color: "#555", alignSelf: "center", marginRight: "10px" }}>Lọc giá:</span>
-                    
-                    <button onClick={() => setPriceRange("ALL")} style={{ padding: "8px 18px", borderRadius: "20px", border: "1px solid #FF5722", background: priceRange === "ALL" ? "#FF5722" : "transparent", color: priceRange === "ALL" ? "white" : "#FF5722", cursor: "pointer", fontWeight: "bold", transition: "all 0.2s" }} onMouseOver={(e) => e.target.style.transform = "translateY(-2px)"} onMouseOut={(e) => e.target.style.transform = "translateY(0)"}>
-                        Tất cả
-                    </button>
-                    <button onClick={() => setPriceRange("UNDER_50K")} style={{ padding: "8px 18px", borderRadius: "20px", border: "1px solid #FF5722", background: priceRange === "UNDER_50K" ? "#FF5722" : "transparent", color: priceRange === "UNDER_50K" ? "white" : "#FF5722", cursor: "pointer", fontWeight: "bold", transition: "all 0.2s" }} onMouseOver={(e) => e.target.style.transform = "translateY(-2px)"} onMouseOut={(e) => e.target.style.transform = "translateY(0)"}>
-                        Dưới 50K
-                    </button>
-                    <button onClick={() => setPriceRange("50K_100K")} style={{ padding: "8px 18px", borderRadius: "20px", border: "1px solid #FF5722", background: priceRange === "50K_100K" ? "#FF5722" : "transparent", color: priceRange === "50K_100K" ? "white" : "#FF5722", cursor: "pointer", fontWeight: "bold", transition: "all 0.2s" }} onMouseOver={(e) => e.target.style.transform = "translateY(-2px)"} onMouseOut={(e) => e.target.style.transform = "translateY(0)"}>
-                        50K - 100K
-                    </button>
-                    <button onClick={() => setPriceRange("OVER_100K")} style={{ padding: "8px 18px", borderRadius: "20px", border: "1px solid #FF5722", background: priceRange === "OVER_100K" ? "#FF5722" : "transparent", color: priceRange === "OVER_100K" ? "white" : "#FF5722", cursor: "pointer", fontWeight: "bold", transition: "all 0.2s" }} onMouseOver={(e) => e.target.style.transform = "translateY(-2px)"} onMouseOut={(e) => e.target.style.transform = "translateY(0)"}>
-                        Trên 100K
-                    </button>
+                {/* Filter section container */}
+                <div style={{ 
+                    backgroundColor: "#fff", padding: "30px", borderRadius: "20px", 
+                    boxShadow: "0 10px 40px rgba(0,0,0,0.06)", border: "1px solid #f5f5f5" 
+                }}>
+                    {/* Categories */}
+                    {categories.length > 0 && (
+                        <div style={{ marginBottom: "25px" }}>
+                            <h3 style={{ margin: "0 0 15px 0", fontSize: "17px", color: "#333", display: "flex", alignItems: "center", gap: "8px", fontWeight: "bold" }}>
+                                <span style={{ color: "#FF5722", fontSize: "20px" }}>🏷️</span> Danh Mục Nổi Bật
+                            </h3>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
+                                <button
+                                    onClick={() => setSelectedCategory(null)}
+                                    style={{
+                                        padding: "10px 22px", borderRadius: "30px", border: "none",
+                                        background: selectedCategory === null ? "linear-gradient(135deg, #FF5722, #FF9800)" : "#f0f2f5",
+                                        color: selectedCategory === null ? "white" : "#444",
+                                        cursor: "pointer", fontWeight: "bold", fontSize: "14px", transition: "all 0.3s ease",
+                                        boxShadow: selectedCategory === null ? "0 6px 15px rgba(255,87,34,0.35)" : "none"
+                                    }}
+                                    onMouseOver={(e) => selectedCategory !== null && (e.target.style.background = "#e4e6e9")}
+                                    onMouseOut={(e) => selectedCategory !== null && (e.target.style.background = "#f0f2f5")}
+                                >
+                                    🌟 Tất cả
+                                </button>
+                                {categories.map((cat) => (
+                                    <button
+                                        key={cat.maDanhMuc}
+                                        onClick={() => setSelectedCategory(
+                                            selectedCategory === cat.maDanhMuc ? null : cat.maDanhMuc
+                                        )}
+                                        style={{
+                                            padding: "10px 22px", borderRadius: "30px", border: "none",
+                                            background: selectedCategory === cat.maDanhMuc ? "linear-gradient(135deg, #FF5722, #FF9800)" : "#f0f2f5",
+                                            color: selectedCategory === cat.maDanhMuc ? "white" : "#444",
+                                            cursor: "pointer", fontWeight: "bold", fontSize: "14px", transition: "all 0.3s ease",
+                                            boxShadow: selectedCategory === cat.maDanhMuc ? "0 6px 15px rgba(255,87,34,0.35)" : "none"
+                                        }}
+                                        onMouseOver={(e) => selectedCategory !== cat.maDanhMuc && (e.target.style.background = "#e4e6e9")}
+                                        onMouseOut={(e) => selectedCategory !== cat.maDanhMuc && (e.target.style.background = "#f0f2f5")}
+                                    >
+                                        {cat.tenDanhMuc}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Price Divider */}
+                    {categories.length > 0 && <div style={{ height: "1px", background: "#f0f0f0", margin: "0 0 25px 0" }}></div>}
+
+                    {/* Price Range */}
+                    <div>
+                        <h3 style={{ margin: "0 0 15px 0", fontSize: "17px", color: "#333", display: "flex", alignItems: "center", gap: "8px", fontWeight: "bold" }}>
+                            <span style={{ color: "#4CAF50", fontSize: "20px" }}>💰</span> Lọc Theo Mức Giá
+                        </h3>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "15px" }}>
+                            {[
+                                { val: "ALL", label: "Tất cả giá" },
+                                { val: "UNDER_50K", label: "Dưới 50.000 đ" },
+                                { val: "50K_100K", label: "Từ 50K - 100K" },
+                                { val: "OVER_100K", label: "Trên 100.000 đ" }
+                            ].map(priceItem => (
+                                <button 
+                                    key={priceItem.val}
+                                    onClick={() => setPriceRange(priceItem.val)} 
+                                    style={{ 
+                                        padding: "10px 22px", borderRadius: "10px", 
+                                        border: priceRange === priceItem.val ? "2px solid #4CAF50" : "1px solid #ddd", 
+                                        background: priceRange === priceItem.val ? "#E8F5E9" : "#fff", 
+                                        color: priceRange === priceItem.val ? "#2E7D32" : "#666", 
+                                        cursor: "pointer", fontWeight: "bold", fontSize: "14px", transition: "all 0.2s ease",
+                                        boxShadow: priceRange === priceItem.val ? "0 4px 12px rgba(76,175,80,0.2)" : "0 2px 5px rgba(0,0,0,0.02)"
+                                    }}
+                                    onMouseOver={(e) => priceRange !== priceItem.val && (e.target.style.borderColor = "#bbb")}
+                                    onMouseOut={(e) => priceRange !== priceItem.val && (e.target.style.borderColor = "#ddd")}
+                                >
+                                    {priceItem.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            {/* LỌC THEO DANH MỤC */}
-            {categories.length > 0 && (
-                <div style={{ backgroundColor: "#fff", padding: "16px 20px", borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", marginBottom: "30px", border: "1px solid #f0f0f0", display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "center" }}>
-                    <span style={{ fontWeight: "bold", color: "#555", marginRight: "6px", whiteSpace: "nowrap" }}>🏷️ Danh mục:</span>
-
-                    {/* Chip "Tất cả" */}
-                    <button
-                        onClick={() => setSelectedCategory(null)}
-                        style={{
-                            padding: "7px 18px",
-                            borderRadius: "20px",
-                            border: selectedCategory === null ? "none" : "1px solid #ddd",
-                            background: selectedCategory === null ? "#FF5722" : "#f5f5f5",
-                            color: selectedCategory === null ? "white" : "#555",
-                            cursor: "pointer",
-                            fontWeight: "bold",
-                            fontSize: "14px",
-                            transition: "all 0.2s",
-                            boxShadow: selectedCategory === null ? "0 3px 10px rgba(255,87,34,0.3)" : "none"
-                        }}
-                    >
-                        Tất cả
-                    </button>
-
-                    {/* Chip từng danh mục */}
-                    {categories.map((cat) => (
-                        <button
-                            key={cat.maDanhMuc}
-                            onClick={() => setSelectedCategory(
-                                selectedCategory === cat.maDanhMuc ? null : cat.maDanhMuc
-                            )}
-                            style={{
-                                padding: "7px 18px",
-                                borderRadius: "20px",
-                                border: selectedCategory === cat.maDanhMuc ? "none" : "1px solid #ddd",
-                                background: selectedCategory === cat.maDanhMuc ? "#FF5722" : "#f5f5f5",
-                                color: selectedCategory === cat.maDanhMuc ? "white" : "#555",
-                                cursor: "pointer",
-                                fontWeight: "bold",
-                                fontSize: "14px",
-                                transition: "all 0.2s",
-                                boxShadow: selectedCategory === cat.maDanhMuc ? "0 3px 10px rgba(255,87,34,0.3)" : "none"
-                            }}
-                        >
-                            {cat.tenDanhMuc}
-                        </button>
-                    ))}
-                </div>
-            )}
 
             {/* Check nếu kết quả rỗng */}
             {filteredFoods.length === 0 && foods.length > 0 ? (

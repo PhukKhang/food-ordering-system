@@ -20,11 +20,12 @@ const getToken = () => {
 };
 
 export default function Dashboard() {
-    const [activeTab, setActiveTab] = useState("orders"); // 'orders' hoặc 'products'
+    const [activeTab, setActiveTab] = useState("orders"); // 'orders', 'products', 'categories'
     const [orders, setOrders] = useState([]);
     const [products, setProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [isDragOver, setIsDragOver] = useState(false);
     const [showDeleted, setShowDeleted] = useState(false);
     
     // UI States cho thông báo và xác nhận
@@ -32,6 +33,7 @@ export default function Dashboard() {
     const [confirmDelete, setConfirmDelete] = useState(null);
     const [editProduct, setEditProduct] = useState(null); // null = đóng modal, có data = đang sửa
     const [isEditUploading, setIsEditUploading] = useState(false);
+    const [confirmReset, setConfirmReset] = useState(false);
 
     const showNotification = (message, type = "success") => {
         setNotification({ message, type });
@@ -42,12 +44,19 @@ export default function Dashboard() {
         tenMon: "",
         giaTien: "",
         hinhAnh: "",
-        moTa: ""
+        moTa: "",
+        maDanhMuc: ""
     });
+    const [categories, setCategories] = useState([]);
+    
+    // State form cho Danh mục
+    const [newCategory, setNewCategory] = useState({ tenDanhMuc: "", moTa: "" });
+    const [editCategory, setEditCategory] = useState(null);
+    const [confirmDeleteCat, setConfirmDeleteCat] = useState(null);
 
     // -------- LOGIC QUẢN LÝ MÓN ĂN --------
-    const handleImageUpload = async (e) => {
-        const file = e.target.files[0];
+    const handleImageUpload = async (eOrFile) => {
+        let file = (eOrFile && eOrFile.target) ? eOrFile.target.files[0] : eOrFile;
         if (!file) return;
 
         const formData = new FormData();
@@ -63,7 +72,7 @@ export default function Dashboard() {
             });
             const data = await response.json();
             if (response.ok) {
-                setNewProduct({ ...newProduct, hinhAnh: data.url });
+                setNewProduct(prev => ({ ...prev, hinhAnh: data.url }));
             } else {
                 showNotification("Lỗi upload: " + data.detail, "error");
             }
@@ -72,6 +81,41 @@ export default function Dashboard() {
             showNotification("Lỗi kết nối khi upload ảnh!", "error");
         } finally {
             setIsUploading(false);
+        }
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        setIsDragOver(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        setIsDragOver(false);
+    };
+
+    const handleDropImage = async (e) => {
+        e.preventDefault();
+        setIsDragOver(false);
+
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            handleImageUpload(e.dataTransfer.files[0]);
+            return;
+        }
+
+        const html = e.dataTransfer.getData("text/html");
+        const url = e.dataTransfer.getData("URL") || e.dataTransfer.getData("text/uri-list") || e.dataTransfer.getData("text/plain");
+
+        if (html) {
+            const match = html.match(/src\s*=\s*"([^"]+)"/);
+            if (match && match[1]) {
+                setNewProduct(prev => ({ ...prev, hinhAnh: match[1] }));
+                return;
+            }
+        }
+        
+        if (url && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:image/"))) {
+            setNewProduct(prev => ({ ...prev, hinhAnh: url }));
         }
     };
 
@@ -109,10 +153,95 @@ export default function Dashboard() {
     useEffect(() => {
         if (activeTab === "products") {
             fetchProducts();
+            fetchCategories();
         } else if (activeTab === "orders") {
             fetchOrders();
+        } else if (activeTab === "categories") {
+            fetchCategories();
         }
     }, [activeTab, showDeleted]);
+
+    const fetchCategories = async () => {
+        try {
+            const res = await fetch("http://localhost:8000/categories/");
+            const data = await res.json();
+            if (Array.isArray(data)) setCategories(data);
+        } catch (err) {
+            console.error("Lỗi tải danh mục:", err);
+        }
+    };
+
+    const handleAddCategory = async (e) => {
+        e.preventDefault();
+        try {
+            const token = getToken();
+            const res = await fetch("http://localhost:8000/categories/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { "Authorization": `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify(newCategory)
+            });
+            if (res.ok) {
+                showNotification("Tạo danh mục thành công!", "success");
+                setNewCategory({ tenDanhMuc: "", moTa: "" });
+                fetchCategories();
+            } else {
+                const data = await res.json();
+                showNotification(data.detail || "Có lỗi khi tạo danh mục!", "error");
+            }
+        } catch {
+            showNotification("Lỗi kết nối API!", "error");
+        }
+    };
+
+    const handleUpdateCategory = async (e) => {
+        e.preventDefault();
+        if (!editCategory) return;
+        try {
+            const token = getToken();
+            const res = await fetch(`http://localhost:8000/categories/${editCategory.maDanhMuc}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { "Authorization": `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({ tenDanhMuc: editCategory.tenDanhMuc, moTa: editCategory.moTa })
+            });
+            if (res.ok) {
+                showNotification("Cập nhật danh mục thành công!", "success");
+                setEditCategory(null);
+                fetchCategories();
+            } else {
+                const data = await res.json();
+                showNotification(data.detail || "Lỗi cập nhật!", "error");
+            }
+        } catch {
+            showNotification("Lỗi kết nối API!", "error");
+        }
+    };
+
+    const handleDeleteCategory = async () => {
+        if (!confirmDeleteCat) return;
+        try {
+            const token = getToken();
+            const res = await fetch(`http://localhost:8000/categories/${confirmDeleteCat}`, {
+                method: "DELETE",
+                headers: token ? { "Authorization": `Bearer ${token}` } : {}
+            });
+            if (res.ok) {
+                showNotification("Đã xóa danh mục thành công!", "success");
+                setConfirmDeleteCat(null);
+                fetchCategories();
+            } else {
+                showNotification("Lỗi xóa danh mục!", "error");
+            }
+        } catch {
+            showNotification("Lỗi kết nối!", "error");
+        }
+    };
+
 
     const handleAddProduct = async (e) => {
         e.preventDefault();
@@ -132,7 +261,7 @@ export default function Dashboard() {
             });
             if (response.ok) {
                 showNotification("Đã thêm món mới thành công!", "success");
-                setNewProduct({ tenMon: "", giaTien: "", hinhAnh: "", moTa: "" }); // Reset form
+                setNewProduct({ tenMon: "", giaTien: "", hinhAnh: "", moTa: "", maDanhMuc: "" }); // Reset form
                 fetchProducts(); // Refresh danh sách
             }
         } catch (error) {
@@ -245,7 +374,8 @@ export default function Dashboard() {
                     tenMon: editProduct.tenMon,
                     giaTien: parseFloat(editProduct.giaTien),
                     hinhAnh: editProduct.hinhAnh,
-                    moTa: editProduct.moTa
+                    moTa: editProduct.moTa,
+                    maDanhMuc: editProduct.maDanhMuc || null
                 })
             });
             if (response.ok) {
@@ -296,6 +426,26 @@ export default function Dashboard() {
         const prevStatus = STATUS_CONFIG[currentStatus].prev;
         if (!prevStatus) return; 
         handleToggleOrderStatus(orderId, prevStatus);
+    };
+
+    const handleResetAll = async () => {
+        try {
+            const token = getToken();
+            const response = await fetch("http://localhost:8000/orders/reset-all", {
+                method: "DELETE",
+                headers: token ? { "Authorization": `Bearer ${token}` } : {}
+            });
+            if (response.ok) {
+                showNotification("Đã xóa toàn bộ lịch sử đơn hàng!", "success");
+                fetchOrders();
+            } else {
+                showNotification("Lỗi khi xóa dữ liệu!", "error");
+            }
+        } catch (err) {
+            showNotification("Lỗi kết nối!", "error");
+        } finally {
+            setConfirmReset(false);
+        }
     };
 
 
@@ -417,6 +567,12 @@ export default function Dashboard() {
                         >
                             🔄 Làm mới
                         </button>
+                        <button 
+                            onClick={() => setConfirmReset(true)}
+                            style={{ padding: "8px 15px", backgroundColor: "#F44336", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", display: "flex", alignItems: "center", gap: "6px", boxShadow: "0 2px 5px rgba(0,0,0,0.1)", transition: "0.2s" }}
+                        >
+                            🗑️ Reset Dữ Liệu
+                        </button>
                     </div>
                 </div>
                 
@@ -506,8 +662,37 @@ export default function Dashboard() {
                         <input required type="number" min="0" value={newProduct.giaTien} onChange={(e) => setNewProduct({...newProduct, giaTien: e.target.value})} style={{ width: "100%", padding: "12px", borderRadius: "6px", border: "1px solid #ddd", boxSizing: "border-box", fontSize: "15px", outline: "none" }} placeholder="VD: 55000" />
                     </div>
                     <div>
-                        <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "bold", fontSize: "14px" }}>Hình ảnh thu nhỏ (Tải lên từ máy)</label>
-                        <input type="file" accept="image/*" onChange={handleImageUpload} style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "2px dashed #FF5722", boxSizing: "border-box", fontSize: "14px", outline: "none", cursor: "pointer", backgroundColor: "#fff5f2" }} />
+                        <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "bold", fontSize: "14px" }}>Danh mục <span style={{color: "red"}}>*</span></label>
+                        <select
+                            required
+                            value={newProduct.maDanhMuc}
+                            onChange={(e) => setNewProduct({...newProduct, maDanhMuc: e.target.value})}
+                            style={{ width: "100%", padding: "12px", borderRadius: "6px", border: "1px solid #ddd", boxSizing: "border-box", fontSize: "15px", outline: "none", backgroundColor: "#fff", cursor: "pointer" }}
+                        >
+                            <option value="">-- Chọn danh mục --</option>
+                            {categories.map(cat => (
+                                <option key={cat.maDanhMuc} value={cat.maDanhMuc}>{cat.tenDanhMuc}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "bold", fontSize: "14px" }}>Hình ảnh thu nhỏ</label>
+                        <div 
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDropImage}
+                            style={{ 
+                                width: "100%", padding: "20px 10px", borderRadius: "6px", 
+                                border: isDragOver ? "2px dashed #4CAF50" : "2px dashed #FF5722", 
+                                boxSizing: "border-box", textAlign: "center", cursor: "pointer", 
+                                backgroundColor: isDragOver ? "#e8f5e9" : "#fff5f2", transition: "0.2s" 
+                            }}
+                            onClick={() => document.getElementById("file-upload").click()}
+                        >
+                            <input id="file-upload" type="file" accept="image/*" onChange={handleImageUpload} style={{ display: "none" }} />
+                            <div style={{ color: "#FF5722", fontWeight: "bold", marginBottom: "5px", fontSize: "15px" }}>📥 Kéo & thả ảnh từ trình duyệt vào đây</div>
+                            <div style={{ fontSize: "13px", color: "#666" }}>(Hoặc nhấn để tải ảnh lên từ máy)</div>
+                        </div>
                         
                         {isUploading && <div style={{ fontSize: "13px", color: "#2196F3", marginTop: "8px", fontWeight: "bold" }}>⏳ Đang tải ảnh lên máy chủ...</div>}
                         
@@ -665,6 +850,98 @@ export default function Dashboard() {
         </div>
     );
 
+    // RENDER: GIAO DIỆN TAB DANH MỤC
+    const renderCategoryTab = () => (
+        <div style={{ display: "flex", gap: "20px", alignItems: "flex-start", flexDirection: "row" }}>
+            
+            {/* Cột trái: Form Thêm Danh mục */}
+            <div style={{ flex: "0 0 350px", backgroundColor: "#fff", padding: "25px", borderRadius: "10px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", position: "sticky", top: "20px" }}>
+                <h3 style={{ marginTop: 0, marginBottom: "20px", color: "#333", borderBottom: "2px solid #eee", paddingBottom: "10px", fontSize: "18px" }}>
+                    Tiêu Chuẩn Danh Mục Mới
+                </h3>
+                <form onSubmit={handleAddCategory} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+                    <div>
+                        <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "bold", fontSize: "14px" }}>Tên danh mục <span style={{color: "red"}}>*</span></label>
+                        <input required type="text" value={newCategory.tenDanhMuc} onChange={(e) => setNewCategory({...newCategory, tenDanhMuc: e.target.value})} style={{ width: "100%", padding: "12px", borderRadius: "6px", border: "1px solid #ddd", boxSizing: "border-box", fontSize: "15px", outline: "none" }} placeholder="VD: Món Tráng Miệng" />
+                    </div>
+                    <div>
+                        <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "bold", fontSize: "14px" }}>Mô tả ngắn</label>
+                        <textarea value={newCategory.moTa} onChange={(e) => setNewCategory({...newCategory, moTa: e.target.value})} style={{ width: "100%", padding: "12px", borderRadius: "6px", border: "1px solid #ddd", minHeight: "100px", boxSizing: "border-box", fontSize: "15px", resize: "vertical", outline: "none" }} placeholder="VD: Các món kem, bánh ngọt..." />
+                    </div>
+                    <button type="submit" style={{ padding: "14px", backgroundColor: "#9C27B0", color: "white", border: "none", borderRadius: "6px", fontWeight: "bold", cursor: "pointer", marginTop: "10px", fontSize: "16px", boxShadow: "0 4px 10px rgba(156, 39, 176, 0.3)", transition: "0.2s" }}>
+                        + Thêm Danh Mục
+                    </button>
+                </form>
+            </div>
+
+            {/* Cột phải: Bảng danh sách danh mục */}
+            <div style={{ flex: 1, backgroundColor: "#fff", borderRadius: "10px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", overflow: "hidden" }}>
+                <div style={{ padding: "20px 25px", borderBottom: "1px solid #eee", backgroundColor: "#fafafa", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <h2 style={{ margin: 0, fontSize: "20px", color: "#333" }}>
+                        Danh Sách Danh Mục DB
+                    </h2>
+                    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                        <span style={{ fontSize: "14px", color: "#888", backgroundColor: "#F3E5F5", padding: "4px 10px", borderRadius: "20px", color: "#8E24AA", fontWeight: "bold" }}>
+                            Tổng: {categories.length} danh mục
+                        </span>
+                    </div>
+                </div>
+                
+                <div style={{ overflowX: "auto", maxHeight: "800px", overflowY: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+                        <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
+                            <tr style={{ backgroundColor: "#f5f5f5", color: "#555", fontSize: "15px", boxShadow: "0 2px 2px -1px rgba(0,0,0,0.1)" }}>
+                                <th style={{ padding: "18px 20px", borderBottom: "2px solid #ddd", width: "60px" }}>ID</th>
+                                <th style={{ padding: "18px 20px", borderBottom: "2px solid #ddd" }}>Tên Danh Mục</th>
+                                <th style={{ padding: "18px 20px", borderBottom: "2px solid #ddd" }}>Mô tả</th>
+                                <th style={{ padding: "18px 20px", borderBottom: "2px solid #ddd", textAlign: "right", width: "150px" }}>Hành Động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {categories.length === 0 ? (
+                                <tr>
+                                    <td colSpan="4" style={{ padding: "40px", textAlign: "center", color: "#888", fontStyle: "italic" }}>
+                                        Chưa có danh mục nào. Hãy bổ sung!
+                                    </td>
+                                </tr>
+                            ) : categories.map((cat, index) => (
+                                <tr key={cat.maDanhMuc} style={{ borderBottom: "1px solid #eee", backgroundColor: index % 2 === 0 ? "#fff" : "#fafafa", transition: "0.2s" }} className="table-row-hover">
+                                    <td style={{ padding: "15px 20px", color: "#888", fontWeight: "bold" }}>#{cat.maDanhMuc}</td>
+                                    <td style={{ padding: "15px 20px", fontWeight: "bold", color: "#333", fontSize: "16px" }}>
+                                        {cat.tenDanhMuc}
+                                    </td>
+                                    <td style={{ padding: "15px 20px", color: "#777", fontSize: "14px" }}>
+                                        {cat.moTa || "Không có mô tả"}
+                                    </td>
+                                    <td style={{ padding: "15px 20px", textAlign: "right" }}>
+                                        <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+                                            <button 
+                                                onClick={() => setEditCategory(cat)}
+                                                style={{ 
+                                                    padding: "8px 12px", backgroundColor: "#fff", color: "#1976D2", border: "1px solid #90CAF9", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "bold"
+                                                }}
+                                            >
+                                                ✏️ Sửa
+                                            </button>
+                                            <button 
+                                                onClick={() => setConfirmDeleteCat(cat.maDanhMuc)}
+                                                style={{ 
+                                                    padding: "8px 12px", backgroundColor: "#fff", color: "#d32f2f", border: "1px solid #ef5350", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "bold"
+                                                }}
+                                            >
+                                                Xóa
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "20px", fontFamily: "sans-serif", position: "relative" }}>
             
@@ -730,6 +1007,20 @@ export default function Dashboard() {
                             </div>
 
                             <div>
+                                <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", color: "#555", fontSize: "14px" }}>Danh mục</label>
+                                <select
+                                    value={editProduct.maDanhMuc || ""}
+                                    onChange={(e) => setEditProduct(prev => ({ ...prev, maDanhMuc: e.target.value ? parseInt(e.target.value) : null }))}
+                                    style={{ width: "100%", padding: "11px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "15px", boxSizing: "border-box", outline: "none", backgroundColor: "#fff", cursor: "pointer" }}
+                                >
+                                    <option value="">-- Không thuộc danh mục nào --</option>
+                                    {categories.map(cat => (
+                                        <option key={cat.maDanhMuc} value={cat.maDanhMuc}>{cat.tenDanhMuc}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
                                 <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", color: "#555", fontSize: "14px" }}>Đổi hình ảnh (tùy chọn)</label>
                                 <input type="file" accept="image/*" onChange={handleEditImageUpload}
                                     style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "2px dashed #1976D2", boxSizing: "border-box", cursor: "pointer", backgroundColor: "#E3F2FD" }}
@@ -782,6 +1073,58 @@ export default function Dashboard() {
                 </div>
             )}
 
+            {/* MODAL CHỈNH SỬA DANH MỤC */}
+            {editCategory && (
+                <div style={{
+                    position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: "rgba(0,0,0,0.55)", zIndex: 2000,
+                    display: "flex", justifyContent: "center", alignItems: "center"
+                }} onClick={(e) => { if (e.target === e.currentTarget) setEditCategory(null); }}>
+                    <div style={{
+                        backgroundColor: "#fff", padding: "32px", borderRadius: "14px",
+                        width: "100%", maxWidth: "420px", boxShadow: "0 20px 60px rgba(0,0,0,0.25)"
+                    }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+                            <h3 style={{ margin: 0, color: "#333", fontSize: "20px" }}>✏️ Sửa Danh Mục</h3>
+                            <button onClick={() => setEditCategory(null)} style={{ background: "none", border: "none", fontSize: "22px", cursor: "pointer", color: "#888", lineHeight: 1 }}>✕</button>
+                        </div>
+                        <form onSubmit={handleUpdateCategory} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+                            <div>
+                                <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", color: "#555", fontSize: "14px" }}>Tên danh mục <span style={{color: "red"}}>*</span></label>
+                                <input required type="text" value={editCategory.tenDanhMuc} onChange={(e) => setEditCategory({...editCategory, tenDanhMuc: e.target.value})} style={{ width: "100%", padding: "12px", borderRadius: "6px", border: "1px solid #ddd", boxSizing: "border-box", fontSize: "15px", outline: "none" }} />
+                            </div>
+                            <div>
+                                <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", color: "#555", fontSize: "14px" }}>Mô tả ngắn</label>
+                                <textarea value={editCategory.moTa || ""} onChange={(e) => setEditCategory({...editCategory, moTa: e.target.value})} style={{ width: "100%", padding: "12px", borderRadius: "6px", border: "1px solid #ddd", minHeight: "100px", boxSizing: "border-box", fontSize: "15px", resize: "vertical", outline: "none" }} />
+                            </div>
+                            <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+                                <button type="button" onClick={() => setEditCategory(null)} style={{ flex: 1, padding: "12px", border: "1px solid #ddd", backgroundColor: "#fff", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", color: "#555" }}>Hủy</button>
+                                <button type="submit" style={{ flex: 1, padding: "12px", border: "none", backgroundColor: "#1976D2", color: "white", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}>Lưu Thay Đổi</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+             {/* MODAL XÁC NHẬN XÓA DANH MỤC */}
+             {confirmDeleteCat && (
+                <div style={{
+                    position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: "rgba(0,0,0,0.5)", zIndex: 2000,
+                    display: "flex", justifyContent: "center", alignItems: "center"
+                }}>
+                    <div style={{ backgroundColor: "#fff", padding: "30px", borderRadius: "10px", maxWidth: "400px", textAlign: "center", boxShadow: "0 10px 30px rgba(0,0,0,0.2)" }}>
+                        <div style={{ fontSize: "50px", marginBottom: "10px" }}>⚠️</div>
+                        <h3 style={{ margin: "0 0 15px 0", color: "#333" }}>Xóa Danh Mục?</h3>
+                        <p style={{ color: "#666", marginBottom: "25px", fontSize: "15px", lineHeight: "1.5" }}>Hành động này sẽ xóa danh mục này khỏi CSDL.</p>
+                        <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+                            <button onClick={() => setConfirmDeleteCat(null)} style={{ padding: "10px 20px", border: "1px solid #ccc", backgroundColor: "#fff", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", color: "#555" }}>Hủy Bỏ</button>
+                            <button onClick={handleDeleteCategory} style={{ padding: "10px 20px", border: "none", backgroundColor: "#F44336", color: "white", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}>Xóa Ngay</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px", borderBottom: "2px solid #eee", paddingBottom: "20px" }}>
                 <h1 style={{ color: "#333", margin: 0, borderLeft: "5px solid #FF5722", paddingLeft: "15px" }}>
                     Bảng Điều Khiển Quản Trị
@@ -811,11 +1154,24 @@ export default function Dashboard() {
                     >
                         🍔 Món Ăn
                     </button>
+                    <button 
+                        onClick={() => setActiveTab("categories")}
+                        style={{
+                            padding: "10px 24px", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", fontSize: "15px", transition: "0.2s",
+                            backgroundColor: activeTab === "categories" ? "#fff" : "transparent",
+                            color: activeTab === "categories" ? "#FF5722" : "#666",
+                            boxShadow: activeTab === "categories" ? "0 2px 8px rgba(0,0,0,0.1)" : "none"
+                        }}
+                    >
+                        🏷️ Danh Mục
+                    </button>
                 </div>
             </div>
 
             {/* Render Component dựa theo Tab đang Active */}
-            {activeTab === "orders" ? renderOrderTab() : renderProductTab()}
+            {activeTab === "orders" && renderOrderTab()}
+            {activeTab === "products" && renderProductTab()}
+            {activeTab === "categories" && renderCategoryTab()}
 
             <style>
                 {`
@@ -835,6 +1191,37 @@ export default function Dashboard() {
                     @keyframes fadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-20px); } }
                 `}
             </style>
+            {/* Modal Xác Nhận Reset Toàn Bộ Dữ Liệu */}
+            {confirmReset && (
+                <div style={{
+                    position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: "rgba(0,0,0,0.6)", zIndex: 3000,
+                    display: "flex", justifyContent: "center", alignItems: "center"
+                }}>
+                    <div style={{ backgroundColor: "#fff", padding: "35px", borderRadius: "12px", maxWidth: "420px", width: "90%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}>
+                        <div style={{ fontSize: "60px", marginBottom: "15px" }}>🗑️</div>
+                        <h3 style={{ margin: "0 0 10px 0", color: "#c62828", fontSize: "20px" }}>Xóa Toàn Bộ Lịch Sử?</h3>
+                        <p style={{ color: "#666", marginBottom: "25px", fontSize: "15px", lineHeight: "1.6" }}>
+                            Hành động này sẽ <strong>xóa vĩnh viễn toàn bộ</strong> đơn hàng và giỏ hàng trong hệ thống.<br/>
+                            <span style={{ color: "#F44336", fontWeight: "bold" }}>Không thể hoàn tác!</span>
+                        </p>
+                        <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+                            <button
+                                onClick={() => setConfirmReset(false)}
+                                style={{ padding: "10px 24px", border: "1px solid #ccc", backgroundColor: "#fff", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", color: "#555", fontSize: "15px" }}
+                            >
+                                ❌ Hủy Bỏ
+                            </button>
+                            <button
+                                onClick={handleResetAll}
+                                style={{ padding: "10px 24px", border: "none", backgroundColor: "#F44336", color: "white", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", fontSize: "15px" }}
+                            >
+                                🗑️ Xóa Tất Cả
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 export default function Register() {
     const [username, setUsername] = useState("");
@@ -16,15 +17,15 @@ export default function Register() {
             });
 
             if (response.ok) {
-                alert("Đăng ký thành công! Hãy đăng nhập nhé.");
+                toast.success("Đăng ký thành công! Hãy đăng nhập nhé.");
                 navigate("/login");
             } else {
                 const data = await response.json();
-                alert(data.detail || "Đăng ký thất bại!");
+                toast.error(data.detail || "Đăng ký thất bại!");
             }
         } catch (error) {
             console.error("Lỗi đăng ký:", error);
-            alert("Lỗi kết nối máy chủ");
+            toast.error("Lỗi kết nối máy chủ");
         }
     };
 

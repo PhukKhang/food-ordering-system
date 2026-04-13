@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { toast } from "react-toastify";
 
 export default function Checkout() {
     const { cart, tongTien, clearCart } = useCart();
@@ -34,7 +35,7 @@ export default function Checkout() {
         e.preventDefault();
         const userStr = sessionStorage.getItem("user");
         if (!userStr) {
-            alert("Vui lòng đăng nhập để thanh toán!");
+            toast.warning("Vui lòng đăng nhập để thanh toán!");
             navigate("/login");
             return;
         }
@@ -59,11 +60,11 @@ export default function Checkout() {
                 navigate("/success");
             } else {
                 const data = await response.json();
-                alert(data.detail || "Lỗi thanh toán!");
+                toast.error(data.detail || "Lỗi thanh toán!");
             }
         } catch (error) {
             console.error("Lỗi đặt hàng:", error);
-            alert("Lỗi kết nối máy chủ đặt hàng");
+            toast.error("Lỗi kết nối máy chủ đặt hàng");
         }
     };
 

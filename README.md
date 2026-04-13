@@ -416,11 +416,11 @@ Báo cáo:
 Thời hạn hoàn thành: 10.05.2026
 ```
 
-## HƯỚNG DẪN CÀI ĐẶT & CHẠY DỰ ÁN
+## HƯỚNG DẪN CÀI ĐẶT
 
 ### Yêu cầu hệ thống
 
-```
+```text
 - Python 3.10+
 - Node.js 18+
 - PostgreSQL 14+
@@ -446,12 +446,6 @@ pip install fastapi uvicorn sqlalchemy psycopg2-binary python-jose passlib[bcryp
 
 # Chạy migration cột daXoa (nếu database đã tồn tại trước đó)
 python migrate_add_daxoa.py
-
-# Tạo tài khoản admin mặc định
-# (Gọi API sau khi server đã chạy): GET http://localhost:8000/auth/create-admin
-
-# Khởi động server backend
-uvicorn app.main:app --reload --port 8000
 ```
 
 ### 2. Cài đặt Frontend (React + Vite)
@@ -462,6 +456,30 @@ cd food-order-frontend
 
 # Cài đặt các package
 npm install
+```
+
+---
+
+## HƯỚNG DẪN CHẠY DỰ ÁN
+
+Sau khi đã hoàn tất các bước cài đặt ở trên, đễ mở và chạy dự án, bạn cần tạo **2 Terminals** riêng biệt.
+
+### Terminal 1: Khởi chạy Backend
+
+```bash
+# Di chuyển vào thư mục backend
+cd food-order-backend
+
+# Khởi động server backend
+uvicorn app.main:app --reload --port 8000
+```
+> *(Tạo tài khoản admin mặc định - gọi đường dẫn bằng trình duyệt web sau khi server Backend đã chạy): [GET http://localhost:8000/auth/create-admin](http://localhost:8000/auth/create-admin)*
+
+### Terminal 2: Khởi chạy Frontend
+
+```bash
+# Di chuyển vào thư mục frontend
+cd food-order-frontend
 
 # Khởi động server dev
 npm run dev
@@ -469,7 +487,7 @@ npm run dev
 
 ### 3. Truy cập ứng dụng
 
-```
+```text
 Frontend:  http://localhost:5173
 Backend:   http://localhost:8000
 API Docs:  http://localhost:8000/docs  (Swagger UI tự động)

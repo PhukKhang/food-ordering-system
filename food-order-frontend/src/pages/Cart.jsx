@@ -1,14 +1,21 @@
 import { useCart } from "../context/CartContext";
 import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 export default function Cart() {
     const { cart, removeFromCart, updateQuantity, clearCart, tongTien, fetchCart } = useCart();
     const navigate = useNavigate();
 
     useEffect(() => {
+        const userStr = sessionStorage.getItem("user");
+        if (!userStr) {
+            toast.warning("Vui lòng đăng nhập để xem giỏ hàng!");
+            navigate("/login");
+            return;
+        }
         if (fetchCart) fetchCart();
-    }, [fetchCart]);
+    }, [fetchCart, navigate]);
 
     return (
         <div style={{ maxWidth: "900px", margin: "0 auto", padding: "20px", fontFamily: "sans-serif" }}>
