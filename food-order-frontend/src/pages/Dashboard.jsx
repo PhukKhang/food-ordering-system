@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import * as XLSX from 'xlsx';
 
@@ -20,6 +21,7 @@ const getToken = () => {
 };
 
 export default function Dashboard() {
+    const { user } = useAuth(); // Lấy thông tin user hiện tại
     const [activeTab, setActiveTab] = useState("orders"); // 'orders', 'products', 'categories'
     const [orders, setOrders] = useState([]);
     const [products, setProducts] = useState([]);
@@ -647,71 +649,73 @@ export default function Dashboard() {
     const renderProductTab = () => (
         <div style={{ display: "flex", gap: "20px", alignItems: "flex-start", flexDirection: "row" }}>
             
-            {/* Cột trái: Form thêm món */}
-            <div style={{ flex: "0 0 350px", backgroundColor: "#fff", padding: "25px", borderRadius: "10px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", position: "sticky", top: "20px" }}>
-                <h3 style={{ marginTop: 0, marginBottom: "20px", color: "#333", borderBottom: "2px solid #eee", paddingBottom: "10px", fontSize: "18px" }}>
-                    Tạo Món Ăn Mới
-                </h3>
-                <form onSubmit={handleAddProduct} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-                    <div>
-                        <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "bold", fontSize: "14px" }}>Tên món <span style={{color: "red"}}>*</span></label>
-                        <input required type="text" value={newProduct.tenMon} onChange={(e) => setNewProduct({...newProduct, tenMon: e.target.value})} style={{ width: "100%", padding: "12px", borderRadius: "6px", border: "1px solid #ddd", boxSizing: "border-box", fontSize: "15px", outline: "none" }} placeholder="VD: Bún Bò Huế" />
-                    </div>
-                    <div>
-                        <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "bold", fontSize: "14px" }}>Giá tiền (VNĐ) <span style={{color: "red"}}>*</span></label>
-                        <input required type="number" min="0" value={newProduct.giaTien} onChange={(e) => setNewProduct({...newProduct, giaTien: e.target.value})} style={{ width: "100%", padding: "12px", borderRadius: "6px", border: "1px solid #ddd", boxSizing: "border-box", fontSize: "15px", outline: "none" }} placeholder="VD: 55000" />
-                    </div>
-                    <div>
-                        <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "bold", fontSize: "14px" }}>Danh mục <span style={{color: "red"}}>*</span></label>
-                        <select
-                            required
-                            value={newProduct.maDanhMuc}
-                            onChange={(e) => setNewProduct({...newProduct, maDanhMuc: e.target.value})}
-                            style={{ width: "100%", padding: "12px", borderRadius: "6px", border: "1px solid #ddd", boxSizing: "border-box", fontSize: "15px", outline: "none", backgroundColor: "#fff", cursor: "pointer" }}
-                        >
-                            <option value="">-- Chọn danh mục --</option>
-                            {categories.map(cat => (
-                                <option key={cat.maDanhMuc} value={cat.maDanhMuc}>{cat.tenDanhMuc}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "bold", fontSize: "14px" }}>Hình ảnh thu nhỏ</label>
-                        <div 
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDropImage}
-                            style={{ 
-                                width: "100%", padding: "20px 10px", borderRadius: "6px", 
-                                border: isDragOver ? "2px dashed #4CAF50" : "2px dashed #FF5722", 
-                                boxSizing: "border-box", textAlign: "center", cursor: "pointer", 
-                                backgroundColor: isDragOver ? "#e8f5e9" : "#fff5f2", transition: "0.2s" 
-                            }}
-                            onClick={() => document.getElementById("file-upload").click()}
-                        >
-                            <input id="file-upload" type="file" accept="image/*" onChange={handleImageUpload} style={{ display: "none" }} />
-                            <div style={{ color: "#FF5722", fontWeight: "bold", marginBottom: "5px", fontSize: "15px" }}>📥 Kéo & thả ảnh từ trình duyệt vào đây</div>
-                            <div style={{ fontSize: "13px", color: "#666" }}>(Hoặc nhấn để tải ảnh lên từ máy)</div>
+            {/* Cột trái: Form thêm món (Chỉ admin mới thấy) */}
+            {(user && user.role === "ADMIN") && (
+                <div style={{ flex: "0 0 350px", backgroundColor: "#fff", padding: "25px", borderRadius: "10px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", position: "sticky", top: "20px" }}>
+                    <h3 style={{ marginTop: 0, marginBottom: "20px", color: "#333", borderBottom: "2px solid #eee", paddingBottom: "10px", fontSize: "18px" }}>
+                        Tạo Món Ăn Mới
+                    </h3>
+                    <form onSubmit={handleAddProduct} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+                        <div>
+                            <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "bold", fontSize: "14px" }}>Tên món <span style={{color: "red"}}>*</span></label>
+                            <input required type="text" value={newProduct.tenMon} onChange={(e) => setNewProduct({...newProduct, tenMon: e.target.value})} style={{ width: "100%", padding: "12px", borderRadius: "6px", border: "1px solid #ddd", boxSizing: "border-box", fontSize: "15px", outline: "none" }} placeholder="VD: Bún Bò Huế" />
                         </div>
-                        
-                        {isUploading && <div style={{ fontSize: "13px", color: "#2196F3", marginTop: "8px", fontWeight: "bold" }}>⏳ Đang tải ảnh lên máy chủ...</div>}
-                        
-                        {newProduct.hinhAnh && !isUploading && (
-                            <div style={{ marginTop: "12px", textAlign: "center", backgroundColor: "#fafafa", padding: "10px", borderRadius: "8px", border: "1px solid #eee" }}>
-                                <div style={{ fontSize: "12px", color: "#4CAF50", marginBottom: "8px", fontWeight: "bold" }}>✓ Tải ảnh thành công (Xem trước)</div>
-                                <img src={newProduct.hinhAnh} style={{ maxWidth: "100%", height: "120px", objectFit: "cover", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }} alt="Preview" />
+                        <div>
+                            <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "bold", fontSize: "14px" }}>Giá tiền (VNĐ) <span style={{color: "red"}}>*</span></label>
+                            <input required type="number" min="0" value={newProduct.giaTien} onChange={(e) => setNewProduct({...newProduct, giaTien: e.target.value})} style={{ width: "100%", padding: "12px", borderRadius: "6px", border: "1px solid #ddd", boxSizing: "border-box", fontSize: "15px", outline: "none" }} placeholder="VD: 55000" />
+                        </div>
+                        <div>
+                            <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "bold", fontSize: "14px" }}>Danh mục <span style={{color: "red"}}>*</span></label>
+                            <select
+                                required
+                                value={newProduct.maDanhMuc}
+                                onChange={(e) => setNewProduct({...newProduct, maDanhMuc: e.target.value})}
+                                style={{ width: "100%", padding: "12px", borderRadius: "6px", border: "1px solid #ddd", boxSizing: "border-box", fontSize: "15px", outline: "none", backgroundColor: "#fff", cursor: "pointer" }}
+                            >
+                                <option value="">-- Chọn danh mục --</option>
+                                {categories.map(cat => (
+                                    <option key={cat.maDanhMuc} value={cat.maDanhMuc}>{cat.tenDanhMuc}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "bold", fontSize: "14px" }}>Hình ảnh thu nhỏ</label>
+                            <div 
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDropImage}
+                                style={{ 
+                                    width: "100%", padding: "20px 10px", borderRadius: "6px", 
+                                    border: isDragOver ? "2px dashed #4CAF50" : "2px dashed #FF5722", 
+                                    boxSizing: "border-box", textAlign: "center", cursor: "pointer", 
+                                    backgroundColor: isDragOver ? "#e8f5e9" : "#fff5f2", transition: "0.2s" 
+                                }}
+                                onClick={() => document.getElementById("file-upload").click()}
+                            >
+                                <input id="file-upload" type="file" accept="image/*" onChange={handleImageUpload} style={{ display: "none" }} />
+                                <div style={{ color: "#FF5722", fontWeight: "bold", marginBottom: "5px", fontSize: "15px" }}>📥 Kéo & thả ảnh từ trình duyệt vào đây</div>
+                                <div style={{ fontSize: "13px", color: "#666" }}>(Hoặc nhấn để tải ảnh lên từ máy)</div>
                             </div>
-                        )}
-                    </div>
-                    <div>
-                        <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "bold", fontSize: "14px" }}>Mô tả ngắn</label>
-                        <textarea value={newProduct.moTa} onChange={(e) => setNewProduct({...newProduct, moTa: e.target.value})} style={{ width: "100%", padding: "12px", borderRadius: "6px", border: "1px solid #ddd", minHeight: "100px", boxSizing: "border-box", fontSize: "15px", resize: "vertical", outline: "none" }} placeholder="VD: Thơm ngon mời bạn ăn nha..." />
-                    </div>
-                    <button type="submit" style={{ padding: "14px", backgroundColor: "#FF5722", color: "white", border: "none", borderRadius: "6px", fontWeight: "bold", cursor: "pointer", marginTop: "10px", fontSize: "16px", boxShadow: "0 4px 10px rgba(255, 87, 34, 0.3)", transition: "0.2s" }}>
-                        + Lưu Vào Menu
-                    </button>
-                </form>
-            </div>
+                            
+                            {isUploading && <div style={{ fontSize: "13px", color: "#2196F3", marginTop: "8px", fontWeight: "bold" }}>⏳ Đang tải ảnh lên máy chủ...</div>}
+                            
+                            {newProduct.hinhAnh && !isUploading && (
+                                <div style={{ marginTop: "12px", textAlign: "center", backgroundColor: "#fafafa", padding: "10px", borderRadius: "8px", border: "1px solid #eee" }}>
+                                    <div style={{ fontSize: "12px", color: "#4CAF50", marginBottom: "8px", fontWeight: "bold" }}>✓ Tải ảnh thành công (Xem trước)</div>
+                                    <img src={newProduct.hinhAnh} style={{ maxWidth: "100%", height: "120px", objectFit: "cover", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }} alt="Preview" />
+                                </div>
+                            )}
+                        </div>
+                        <div>
+                            <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "bold", fontSize: "14px" }}>Mô tả ngắn</label>
+                            <textarea value={newProduct.moTa} onChange={(e) => setNewProduct({...newProduct, moTa: e.target.value})} style={{ width: "100%", padding: "12px", borderRadius: "6px", border: "1px solid #ddd", minHeight: "100px", boxSizing: "border-box", fontSize: "15px", resize: "vertical", outline: "none" }} placeholder="VD: Thơm ngon mời bạn ăn nha..." />
+                        </div>
+                        <button type="submit" style={{ padding: "14px", backgroundColor: "#FF5722", color: "white", border: "none", borderRadius: "6px", fontWeight: "bold", cursor: "pointer", marginTop: "10px", fontSize: "16px", boxShadow: "0 4px 10px rgba(255, 87, 34, 0.3)", transition: "0.2s" }}>
+                            + Lưu Vào Menu
+                        </button>
+                    </form>
+                </div>
+            )}
 
             {/* Cột phải: Bảng danh sách món */}
             <div style={{ flex: 1, backgroundColor: "#fff", borderRadius: "10px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", overflow: "hidden" }}>
@@ -791,28 +795,32 @@ export default function Dashboard() {
                                         <td style={{ padding: "15px 20px", textAlign: "right" }}>
                                             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
                                                 {food.daXoa ? (
-                                                    <button
-                                                        onClick={() => handleRestoreProduct(food.maMon)}
-                                                        style={{
-                                                            padding: "8px 15px", backgroundColor: "#E3F2FD", color: "#1976D2",
-                                                            border: "1px solid #90CAF9", borderRadius: "6px",
-                                                            cursor: "pointer", fontSize: "13px", fontWeight: "bold", transition: "0.2s"
-                                                        }}
-                                                    >
-                                                        ↩️ Khôi Phục Lại Món Này
-                                                    </button>
-                                                ) : (
-                                                    <>
+                                                    (user && user.role === "ADMIN") && (
                                                         <button
-                                                            onClick={() => openEditModal(food)}
+                                                            onClick={() => handleRestoreProduct(food.maMon)}
                                                             style={{
-                                                                padding: "8px 12px", backgroundColor: "#fff", color: "#1976D2",
+                                                                padding: "8px 15px", backgroundColor: "#E3F2FD", color: "#1976D2",
                                                                 border: "1px solid #90CAF9", borderRadius: "6px",
                                                                 cursor: "pointer", fontSize: "13px", fontWeight: "bold", transition: "0.2s"
                                                             }}
                                                         >
-                                                            ✏️ Sửa
+                                                            ↩️ Khôi Phục Lại Món Này
                                                         </button>
+                                                    )
+                                                ) : (
+                                                    <>
+                                                        {(user && user.role === "ADMIN") && (
+                                                            <button
+                                                                onClick={() => openEditModal(food)}
+                                                                style={{
+                                                                    padding: "8px 12px", backgroundColor: "#fff", color: "#1976D2",
+                                                                    border: "1px solid #90CAF9", borderRadius: "6px",
+                                                                    cursor: "pointer", fontSize: "13px", fontWeight: "bold", transition: "0.2s"
+                                                                }}
+                                                            >
+                                                                ✏️ Sửa
+                                                            </button>
+                                                        )}
 
                                                         <button 
                                                             onClick={() => handleToggleProductStatus(food.maMon)}
@@ -828,14 +836,16 @@ export default function Dashboard() {
                                                             {food.conHang !== false ? "Báo Hết" : "Mở Bán Lại"}
                                                         </button>
 
-                                                        <button 
-                                                            onClick={() => confirmActionDelete(food.maMon)}
-                                                            style={{ 
-                                                                padding: "8px 12px", backgroundColor: "#fff", color: "#d32f2f", border: "1px solid #ef5350", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "bold", transition: "0.2s"
-                                                            }}
-                                                        >
-                                                            Xóa
-                                                        </button>
+                                                        {(user && user.role === "ADMIN") && (
+                                                            <button 
+                                                                onClick={() => confirmActionDelete(food.maMon)}
+                                                                style={{ 
+                                                                    padding: "8px 12px", backgroundColor: "#fff", color: "#d32f2f", border: "1px solid #ef5350", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "bold", transition: "0.2s"
+                                                                }}
+                                                            >
+                                                                Xóa
+                                                            </button>
+                                                        )}
                                                     </>
                                                 )}
                                             </div>

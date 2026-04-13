@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
 
 export default function Login() {
@@ -11,40 +12,31 @@ export default function Login() {
     // Công cụ dùng để chuyển trang sau khi đăng nhập thành công
     const navigate = useNavigate();
     const { fetchCart } = useCart(); // Lấy hàm đồng bộ giỏ hàng
+    const { login } = useAuth(); // Hardcoded mock login từ context
 
     // Hàm này sẽ chạy khi người dùng bấm nút "Đăng nhập"
     const handleLogin = async (e) => {
         e.preventDefault();
 
         try {
-            const response = await fetch("http://localhost:8000/auth/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password })
-            });
-            const data = await response.json();
+            // Thay thế gọi lên Backend bằng Mock Data Login từ AuthContext
+            const userData = await login(username, password);
+            toast.success(`Đăng nhập thành công! Chào ${userData.name}`);
 
-            if (data.error) {
-                toast.error("Tên đăng nhập hoặc mật khẩu không đúng!");
+            // Đồng bộ Giỏ hàng (nếu có API) 
+            await fetchCart();
+
+            // Nếu role là ADMIN hoặc STAFF -> Bật sang trang Admin Dashboard
+            if (userData.role === "ADMIN" || userData.role === "STAFF" || userData.role === "admin") {
+                navigate("/admin");
             } else {
-                // Lưu thông tin đăng nhập thật vào trình duyệt
-                sessionStorage.setItem("user", JSON.stringify({ 
-                    token: data.access_token,
-                    userId: data.userId,
-                    username: data.username,
-                    hoTen: data.hoTen,
-                    role: data.role
-                }));
-                
-                // Đồng bộ Giỏ hàng tức thời
-                await fetchCart();
-
-                // Tự động đá về Trang Chủ sau khi đăng nhập thành công
+                // Khách hàng -> Về trang chủ
                 navigate("/"); 
             }
         } catch (error) {
             console.error("Lỗi đăng nhập:", error);
-            toast.error("Lỗi kết nối máy chủ");
+            // In thẳng lỗi do `login` Promise reject trả về
+            toast.error(error.message || "Tên đăng nhập hoặc mật khẩu không đúng!");
         }
     };
 

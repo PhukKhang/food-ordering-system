@@ -8,6 +8,7 @@ import OrderSuccess from "./pages/OrderSuccess";
 import Cart from "./pages/Cart";
 import CustomerOrders from "./pages/CustomerOrders";
 import { CartProvider, useCart } from "./context/CartContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -17,12 +18,11 @@ function Navbar() {
   const navigate = useNavigate();
   const location = useLocation(); // Giúp Navbar tự render lại khi đổi route
   
-  // Lấy thông tin user từ Local Storage
-  const userStr = sessionStorage.getItem("user");
-  const user = userStr ? JSON.parse(userStr) : null;
+  // Sử dụng context để lấy trạng thái user
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
-      sessionStorage.removeItem("user");
+      logout();
       navigate("/"); // Điều hướng về trang chủ
   };
 
@@ -45,7 +45,7 @@ function Navbar() {
             <Link to="/login" style={{ color: "white", marginRight: "20px", textDecoration: "none" }}>Đăng Nhập</Link>
         )}
         
-        {(user && user.role === "admin") && (
+        {(user && (user.role === "admin" || user.role === "ADMIN" || user.role === "STAFF")) && (
             <Link to="/admin" style={{ color: "white", marginRight: "20px", textDecoration: "none", fontWeight: "bold" }}>Quản Lý</Link>
         )}
 
@@ -82,25 +82,27 @@ function Navbar() {
 
 function App() {
   return (
-    // Bọc CartProvider ở ngoài cùng
-    <CartProvider>
-      <BrowserRouter>
-        <Navbar />
-        <ToastContainer position="top-right" autoClose={3000} />
-        <div style={{ padding: "20px" }}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/admin" element={<Dashboard />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/history" element={<CustomerOrders />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/success" element={<OrderSuccess />} />
-          </Routes>
-        </div>
-      </BrowserRouter>
-    </CartProvider>
+    // Bọc ứng dụng bằng các context provider
+    <AuthProvider>
+      <CartProvider>
+        <BrowserRouter>
+          <Navbar />
+          <ToastContainer position="top-right" autoClose={3000} />
+          <div style={{ padding: "20px" }}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/admin" element={<Dashboard />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/history" element={<CustomerOrders />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/success" element={<OrderSuccess />} />
+            </Routes>
+          </div>
+        </BrowserRouter>
+      </CartProvider>
+    </AuthProvider>
   );
 }
 

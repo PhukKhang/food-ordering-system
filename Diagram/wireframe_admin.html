@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wireframe - Admin Dashboard</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f1f1f1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .box {
+            border: 2px dashed #666;
+            background-color: #fafafa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #555;
+            font-weight: bold;
+            font-size: 13px;
+            text-align: center;
+        }
+        h2 { color: #555; margin-bottom: 15px; font-size: 18px; }
+
+        .wireframe-container {
+            width: 1024px;
+            background: #fff;
+            border: 3px solid #333;
+            box-shadow: 10px 10px 0px #ccc;
+        }
+
+        /* Top Header Bar */
+        .topbar {
+            height: 55px;
+            border-bottom: 2px solid #333;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f5f5f5;
+        }
+        .topbar-logo { font-size: 16px; font-weight: bold; color: #333; border: 2px dashed #999; padding: 5px 15px; }
+        .topbar-user { display: flex; gap: 15px; }
+        .topbar-user span { border: 2px dashed #999; padding: 5px 12px; font-size: 12px; color: #555; }
+
+        /* Layout: Sidebar + Main */
+        .layout { display: flex; height: 680px; }
+
+        /* Sidebar */
+        .sidebar {
+            width: 200px;
+            border-right: 2px solid #333;
+            display: flex;
+            flex-direction: column;
+            padding: 15px 0;
+            gap: 5px;
+            background: #fafafa;
+        }
+        .sidebar-item {
+            padding: 12px 20px;
+            border: none;
+            border-left: 4px solid transparent;
+            font-size: 13px;
+            font-weight: bold;
+            color: #555;
+            cursor: pointer;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sidebar-item.active { border-left: 4px solid #333; background: #eee; color: #000; }
+        .sidebar-divider { border-bottom: 2px dashed #ccc; margin: 8px 15px; }
+
+        /* Main Content */
+        .main { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+
+        /* Tab buttons */
+        .tabs { display: flex; gap: 10px; }
+        .tab { padding: 10px 20px; border: 2px dashed #666; font-size: 13px; font-weight: bold; color: #555; }
+        .tab.active { background: #333; color: #fff; border-style: solid; }
+
+        /* Stats Row */
+        .stats-row { display: flex; gap: 15px; }
+        .stat-card { flex: 1; height: 75px; }
+
+        /* Charts Row */
+        .charts-row { display: flex; gap: 15px; flex: 1; }
+        .chart-big { flex: 2; }
+        .chart-small { flex: 1; }
+
+        /* Table */
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            border: 2px dashed #666;
+            border-bottom: none;
+            background: #f0f0f0;
+        }
+        .table-header h3 { font-size: 14px; color: #333; }
+        .table-header .filter-box { border: 2px dashed #999; padding: 5px 12px; font-size: 12px; color: #666; }
+        .data-table { width: 100%; border: 2px dashed #666; border-collapse: collapse; }
+        .data-table th { background: #eee; border: 1px solid #ccc; padding: 10px; font-size: 12px; color: #333; text-align: left; }
+        .data-table td { border: 1px solid #ddd; padding: 10px; font-size: 12px; color: #666; }
+        .status-badge { padding: 3px 10px; border: 2px dashed #999; font-size: 11px; }
+        .action-btn { padding: 4px 10px; border: 2px dashed #666; font-size: 11px; }
+    </style>
+</head>
+<body>
+    <h2>🛠️ Trang Quản Trị Dành Cho ADMIN/STAFF (Dashboard)</h2>
+    <div class="wireframe-container">
+
+        <!-- Top Header Bar -->
+        <div class="topbar">
+            <div class="topbar-logo">🍔 Food Order Admin</div>
+            <div class="topbar-user">
+                <span>[ Quản trị viên ▼ ]</span>
+                <span>[ Đăng Xuất ]</span>
+            </div>
+        </div>
+
+        <div class="layout">
+            <!-- Sidebar Navigation -->
+            <div class="sidebar">
+                <div class="sidebar-item active">📋 Quản lý Đơn Hàng</div>
+                <div class="sidebar-item">🍽️ Quản lý Món Ăn</div>
+                <div class="sidebar-item">📁 Quản lý Danh Mục</div>
+                <div class="sidebar-divider"></div>
+                <div class="sidebar-item" style="color:#999; font-style:italic;">[ Tương lai ]</div>
+                <div class="sidebar-item" style="color:#999; font-size:12px;">👤 Quản lý NV</div>
+                <div class="sidebar-item" style="color:#999; font-size:12px;">📊 Báo cáo</div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="main">
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <div class="tab active">📋 Đơn Hàng</div>
+                    <div class="tab">🍽️ Món Ăn</div>
+                    <div class="tab">📁 Danh Mục</div>
+                </div>
+
+                <!-- Stat Cards -->
+                <div class="stats-row">
+                    <div class="box stat-card">[ Tổng Đơn Hôm Nay ]<br>---</div>
+                    <div class="box stat-card">[ Đơn Đang Giao ]<br>---</div>
+                    <div class="box stat-card">[ Đã Hoàn Thành ]<br>---</div>
+                    <div class="box stat-card">[ Doanh Thu Hôm Nay ]<br>---</div>
+                </div>
+
+                <!-- Order Table -->
+                <div>
+                    <div class="table-header">
+                        <h3>📋 Danh Sách Đơn Hàng</h3>
+                        <div style="display:flex; gap:10px;">
+                            <div class="filter-box">[ Lọc: Trạng thái ▼ ]</div>
+                            <div class="filter-box">[ Làm Mới ]</div>
+                        </div>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Mã Đơn</th>
+                                <th>Khách Hàng</th>
+                                <th>SĐT</th>
+                                <th>Tổng Tiền</th>
+                                <th>Trạng Thái</th>
+                                <th>Hành Động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#001</td>
+                                <td>Nguyễn Văn A</td>
+                                <td>0901xxxxxx</td>
+                                <td>85,000 VNĐ</td>
+                                <td><span class="status-badge">[ Chờ xử lý ]</span></td>
+                                <td><span class="action-btn">[ Xem ] [ Duyệt ]</span></td>
+                            </tr>
+                            <tr>
+                                <td>#002</td>
+                                <td>Trần Thị B</td>
+                                <td>0912xxxxxx</td>
+                                <td>120,000 VNĐ</td>
+                                <td><span class="status-badge">[ Đang giao ]</span></td>
+                                <td><span class="action-btn">[ Xem ] [ Xong ]</span></td>
+                            </tr>
+                            <tr>
+                                <td>#003</td>
+                                <td>Lê Văn C</td>
+                                <td>0987xxxxxx</td>
+                                <td>55,000 VNĐ</td>
+                                <td><span class="status-badge">[ Hoàn thành ]</span></td>
+                                <td><span class="action-btn">[ Xem ]</span></td>
+                            </tr>
+                            <tr>
+                                <td>#004</td>
+                                <td>Phạm Thị D</td>
+                                <td>0966xxxxxx</td>
+                                <td>200,000 VNĐ</td>
+                                <td><span class="status-badge">[ Chờ xử lý ]</span></td>
+                                <td><span class="action-btn">[ Xem ] [ Duyệt ]</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</body>
+</html>

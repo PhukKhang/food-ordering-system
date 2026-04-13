@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wireframe - Food Ordering System</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f1f1f1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .wireframe-container {
+            width: 1024px;
+            background-color: #fff;
+            border: 3px solid #333;
+            box-shadow: 10px 10px 0px #ccc;
+            padding: 20px;
+        }
+        /* Phác thảo các khối */
+        .box {
+            border: 2px dashed #666;
+            background-color: #fafafa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-weight: bold;
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        .navbar { height: 60px; margin-bottom: 20px; display: flex; justify-content: space-between; padding: 0 20px; }
+        .nav-logo { width: 150px; height: 100%; border-right: 2px dashed #666; }
+        .nav-links { width: 400px; height: 100%; }
+
+        .search-area { height: 80px; margin-bottom: 20px; }
+        .category-filter { height: 50px; margin-bottom: 20px; display: flex; gap: 10px; border: none; background: transparent; justify-content: space-between;}
+        .cat-pill { width: 12%; height: 100%; border: 2px dotted #999; }
+
+        .main-content { display: flex; gap: 20px; }
+        .product-grid { flex: 3; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; border: none; background: transparent; }
+        
+        .product-card { height: 250px; flex-direction: column; justify-content: flex-start; padding: 10px; box-sizing: border-box; }
+        .img-placeholder { width: 100%; height: 140px; border: 2px solid #555; background: #eee; position: relative; margin-bottom: 10px; }
+        /* Dấu X chéo trong ảnh */
+        .img-placeholder::before, .img-placeholder::after {
+            content: ''; position: absolute; background: #999;
+        }
+        .img-placeholder::before { width: 2px; height: 100%; transform: rotate(45deg); }
+        .img-placeholder::after { width: 100%; height: 2px; transform: rotate(45deg); }
+        
+        .text-line { width: 80%; height: 10px; background: #ccc; margin-bottom: 8px; }
+        .text-line.short { width: 50%; }
+        .btn-wire { width: 100%; height: 35px; border: 2px solid #333; margin-top: auto; }
+
+        .sidebar-cart { flex: 1; height: 500px; display: flex; flex-direction: column; padding: 15px; box-sizing: border-box;}
+        .cart-item { width: 100%; height: 50px; border-bottom: 2px dotted #ccc; margin-bottom: 10px; }
+        .checkout-btn { width: 100%; height: 45px; background: #ddd; border: 2px solid #333; margin-top: auto; }
+
+    </style>
+</head>
+<body>
+    <h2 style="color:#555">🖥️ Trang Chủ Dành Cho Khách Hàng (Home/Menu)</h2>
+    <div class="wireframe-container">
+        
+        <!-- Navbar -->
+        <div class="box navbar">
+            <div class="box nav-logo">[ Logo / Tên Quán ]</div>
+            <div class="box nav-links" style="border:none; justify-content: flex-end; gap: 20px; background: transparent;">
+                <span>[ Trang chủ ]</span>
+                <span>[ Lịch sử đơn ]</span>
+                <span>[ Giỏ hàng (3) ]</span>
+                <span>[ Đăng nhập ]</span>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="box search-area">
+            [ Thanh Tìm Kiếm (Search Input) ]
+        </div>
+
+        <!-- Categories -->
+        <div class="box category-filter">
+            <div class="box cat-pill">[ Tất cả ]</div>
+            <div class="box cat-pill">[ Cơm ]</div>
+            <div class="box cat-pill">[ Bún / Phở ]</div>
+            <div class="box cat-pill">[ Đồ Ăn Vặt ]</div>
+            <div class="box cat-pill">[ Giải Khát ]</div>
+            <div class="box cat-pill">[ Khác ]</div>
+            <div class="box cat-pill" style="width:20%">[ Bộ lọc Giá ]</div>
+        </div>
+
+        <div class="main-content">
+            <!-- Product Grid -->
+            <div class="box product-grid">
+                <!-- Card 1 -->
+                <div class="box product-card">
+                    <div class="img-placeholder"></div>
+                    <div class="text-line"></div>
+                    <div class="text-line short"></div>
+                    <div class="box btn-wire">[ + Thêm vào giỏ ]</div>
+                </div>
+                <!-- Card 2 -->
+                <div class="box product-card">
+                    <div class="img-placeholder"></div>
+                    <div class="text-line"></div>
+                    <div class="text-line short"></div>
+                    <div class="box btn-wire">[ + Thêm vào giỏ ]</div>
+                </div>
+                 <!-- Card 3 -->
+                 <div class="box product-card">
+                    <div class="img-placeholder"></div>
+                    <div class="text-line"></div>
+                    <div class="text-line short"></div>
+                    <div class="box btn-wire">[ + Thêm vào giỏ ]</div>
+                </div>
+                <!-- Card 4 -->
+                <div class="box product-card">
+                    <div class="img-placeholder"></div>
+                    <div class="text-line"></div>
+                    <div class="text-line short"></div>
+                    <div class="box btn-wire">[ + Thêm vào giỏ ]</div>
+                </div>
+                <!-- Card 5 -->
+                <div class="box product-card">
+                    <div class="img-placeholder"></div>
+                    <div class="text-line"></div>
+                    <div class="text-line short"></div>
+                    <div class="box btn-wire">[ - Hết hàng - ]</div>
+                </div>
+                <!-- Card 6 -->
+                <div class="box product-card">
+                    <div class="img-placeholder"></div>
+                    <div class="text-line"></div>
+                    <div class="text-line short"></div>
+                    <div class="box btn-wire">[ + Thêm vào giỏ ]</div>
+                </div>
+            </div>
+
+            <!-- Cart Sidebar -->
+            <div class="box sidebar-cart">
+                <h3 style="margin-top: 0;">[ Phần Giỏ Hàng ]</h3>
+                <div class="cart-item">[ Item 1 - SL: 2 ]</div>
+                <div class="cart-item">[ Item 2 - SL: 1 ]</div>
+                <div class="text-line" style="margin-top: 20px; width:100%"></div>
+                <div class="text-line short" style="margin-bottom: 20px;"></div>
+                <div class="box checkout-btn">[ Nút Thanh Toán ]</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
